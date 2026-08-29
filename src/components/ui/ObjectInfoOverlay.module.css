@@ -1,0 +1,45 @@
+.panel {
+    position: fixed;
+    inset-inline: 1rem;
+    bottom: 1rem;
+    width: auto;
+    max-height: 46vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+@media (min-width: 1024px) {
+    .panel {
+        inset-inline: auto 1.5rem;
+        top: 50%;
+        bottom: auto;
+        width: 420px;
+        max-width: calc(100vw - 3rem);
+        max-height: calc(100vh - 3rem);
+        transform: translateY(-50%);
+    }
+
+    .freeFlightPanel {
+        inset-inline: 1.5rem auto;
+        top: auto;
+        bottom: 1.5rem;
+        transform: none;
+    }
+}
+
+@media (min-width: 1536px) {
+    .freeFlightPanel {
+        --astra-hud-width: 300px;
+        --astra-overlay-gap: 20px;
+        --astra-overlay-edge: 24px;
+
+        inset-inline: auto
+            calc(
+                var(--astra-hud-width) + var(--astra-overlay-gap) +
+                    var(--astra-overlay-edge)
+            );
+        top: 50%;
+        bottom: auto;
+        transform: translateY(-50%);
+    }
+}
