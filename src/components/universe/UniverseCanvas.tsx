@@ -13,6 +13,7 @@ import { GalacticInfoOverlay } from "../ui/GalacticInfoOverlay";
 import { GalaxyTravelHUD } from "../ui/GalaxyTravelHUD";
 import { BlackHoleOverlay } from "../ui/BlackHoleOverlay";
 import { BlackHoleTransitionVeil } from "../ui/BlackHoleTransitionVeil";
+import { NebulaOverlay } from "../ui/NebulaOverlay";
 import { MainHUD } from "../ui/MainHUD";
 import { ObjectInfoOverlay } from "../ui/ObjectInfoOverlay";
 import { TravelHUD } from "../ui/TravelHUD";
@@ -27,6 +28,10 @@ import { GalacticCenterDirectionMarker } from "./GalacticCenterDirectionMarker";
 import { sagittariusAStar } from "@/data/blackHoles";
 import { SagittariusAStar } from "./galaxy/blackhole/SagittariusAStar";
 import { BlackHoleCameraController } from "./galaxy/blackhole/BlackHoleCameraController";
+import { NebulaScene } from "./galaxy/nebula/NebulaScene";
+import { NebulaCameraController } from "./galaxy/nebula/NebulaCameraController";
+import { getNebulaById } from "@/data/nebulae";
+import { NebulaSkyCues } from "./NebulaSkyCues";
 
 export function UniverseCanvas() {
     const [selectedObject, setSelectedObject] = useState<SelectedObject | null>(null);
@@ -39,6 +44,10 @@ export function UniverseCanvas() {
     const isTravel = cameraMode === "travel";
     const isGalaxy = cameraMode === "galaxy";
     const isBlackHole = isGalaxy && galaxyNavigation.mode === "blackHole";
+    const activeNebula = getNebulaById(galaxyNavigation.activeNebulaId);
+    const isNebula =
+        isGalaxy && galaxyNavigation.mode === "nebula" && activeNebula !== null;
+    const isGalaxyCloseUp = isBlackHole || isNebula;
 
     const handleSelectPlanet = useCallback(
         (name: string) => {
@@ -146,14 +155,14 @@ export function UniverseCanvas() {
     }, []);
 
     const handlePointerMissed = useCallback(() => {
-        if (isBlackHole) {
+        if (isGalaxyCloseUp) {
             return;
         } else if (isGalaxy) {
             galaxyNavigation.clearSelection();
         } else if (!isTravel && selectedObject) {
             setSelectedObject(null);
         }
-    }, [galaxyNavigation, isBlackHole, isGalaxy, isTravel, selectedObject]);
+    }, [galaxyNavigation, isGalaxyCloseUp, isGalaxy, isTravel, selectedObject]);
 
     return (
         <>
@@ -172,7 +181,7 @@ export function UniverseCanvas() {
                         onFocusObject={handleFocusObject}
                     />
                 )}
-                {isGalaxy && !isBlackHole && (
+                {isGalaxy && !isGalaxyCloseUp && (
                     <MilkyWay
                         selectedTargetId={
                             galaxyNavigation.selectedTarget?.id
@@ -193,7 +202,7 @@ export function UniverseCanvas() {
                         onTravelFailure={handleTravelFailure}
                     />
                 )}
-                {isGalaxy && !isBlackHole && (
+                {isGalaxy && !isGalaxyCloseUp && (
                     <GalaxyCameraController
                         mode={galaxyNavigation.mode}
                         activeTarget={galaxyNavigation.activeTarget}
@@ -216,25 +225,57 @@ export function UniverseCanvas() {
                     </>
                 )}
 
+                {isNebula && activeNebula && (
+                    <>
+                        <NebulaScene config={activeNebula} />
+                        <NebulaCameraController
+                            config={activeNebula}
+                            focusRequestId={
+                                galaxyNavigation.nebulaFocusRequestId
+                            }
+                            controlsRef={controlsRef}
+                        />
+                    </>
+                )}
+
                 <StarField
-                    opacityScale={isBlackHole ? 0.1 : isGalaxy ? 0.34 : 1}
+                    opacityScale={
+                        isGalaxyCloseUp ? 0.12 : isGalaxy ? 0.34 : 1
+                    }
                 />
                 {!isGalaxy && (
                     <>
                         <MilkyWaySkyBand />
                         <GalacticCenterDirectionMarker />
+                        <NebulaSkyCues />
                     </>
                 )}
                 <OrbitControls
                     ref={controlsRef}
                     enabled={
-                        isBlackHole ||
+                        isGalaxyCloseUp ||
                         (isGalaxy && galaxyNavigation.mode !== "travel") ||
                         (!isFreeFlight && !isTravel && activeOrbitTarget !== null)
                     }
                     enablePan={false}
-                    minDistance={isBlackHole ? 8.5 : isGalaxy ? 360 : 0}
-                    maxDistance={isBlackHole ? 90 : isGalaxy ? 8500 : Infinity}
+                    minDistance={
+                        isBlackHole
+                            ? 8.5
+                            : isNebula && activeNebula
+                              ? activeNebula.closeUpMinDistance
+                              : isGalaxy
+                                ? 360
+                                : 0
+                    }
+                    maxDistance={
+                        isBlackHole
+                            ? 90
+                            : isNebula && activeNebula
+                              ? activeNebula.closeUpMaxDistance
+                              : isGalaxy
+                                ? 8500
+                                : Infinity
+                    }
                 />
             </Canvas>
 
@@ -250,7 +291,7 @@ export function UniverseCanvas() {
                     onEnterGalaxyView={handleEnterGalaxyView}
                 />
             )}
-            {isGalaxy && !isBlackHole && (
+            {isGalaxy && !isGalaxyCloseUp && (
                 <GalaxyHUD
                     onReturnToLocalSpace={handleReturnToLocalSpace}
                     returnLabel={
@@ -280,6 +321,7 @@ export function UniverseCanvas() {
 
             {isGalaxy &&
                 !isBlackHole &&
+                !isNebula &&
                 galaxyNavigation.selectedTarget &&
                 galaxyNavigation.mode !== "travel" && (
                     <GalacticInfoOverlay
@@ -293,6 +335,7 @@ export function UniverseCanvas() {
                         onTravel={galaxyNavigation.travelToSelected}
                         onEnterLocalSpace={handleReturnToLocalSpace}
                         onEnterBlackHole={galaxyNavigation.enterBlackHole}
+                        onEnterNebula={galaxyNavigation.enterNebula}
                         onClose={galaxyNavigation.clearSelection}
                     />
                 )}
@@ -308,9 +351,22 @@ export function UniverseCanvas() {
                     onReturn={galaxyNavigation.exitBlackHole}
                 />
             )}
+            {isNebula && activeNebula && (
+                <NebulaOverlay
+                    nebula={activeNebula}
+                    onRefocus={galaxyNavigation.refocusNebula}
+                    onReturn={galaxyNavigation.exitNebula}
+                />
+            )}
             {isGalaxy && (
                 <BlackHoleTransitionVeil
-                    phase={isBlackHole ? "closeUp" : "galaxy"}
+                    phase={
+                        isNebula
+                            ? "nebula"
+                            : isBlackHole
+                              ? "closeUp"
+                              : "galaxy"
+                    }
                 />
             )}
         </>

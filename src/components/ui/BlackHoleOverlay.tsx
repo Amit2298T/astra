@@ -24,8 +24,11 @@ export function BlackHoleOverlay({
             </div>
 
             <div className={styles.facts}>
-                {blackHole.facts.map((fact) => (
-                    <div className={styles.fact} key={fact.label}>
+                {blackHole.facts.map((fact, index) => (
+                    <div
+                        className={styles.fact}
+                        key={`black-hole-${blackHole.id}-${fact.label}-${index}`}
+                    >
                         <span>{fact.label}</span>
                         <strong>{fact.value}</strong>
                     </div>

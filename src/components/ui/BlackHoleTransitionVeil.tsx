@@ -1,7 +1,7 @@
 import styles from "./BlackHoleTransitionVeil.module.css";
 
 interface BlackHoleTransitionVeilProps {
-    phase: "galaxy" | "closeUp";
+    phase: "galaxy" | "closeUp" | "nebula";
 }
 
 export function BlackHoleTransitionVeil({ phase }: BlackHoleTransitionVeilProps) {

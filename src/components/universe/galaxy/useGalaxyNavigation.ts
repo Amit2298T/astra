@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 
 import type { GalacticNavigationTarget } from "@/data/galaxy";
+import { getNebulaById } from "@/data/nebulae";
 import { galaxyTravelManager } from "@/engine/navigation/GalaxyTravelManager";
 import { galacticRegistry } from "@/engine/registry/GalacticRegistry";
 
@@ -10,7 +11,8 @@ export type GalaxyNavigationMode =
     | "overview"
     | "focus"
     | "travel"
-    | "blackHole";
+    | "blackHole"
+    | "nebula";
 
 export function useGalaxyNavigation() {
     const [mode, setMode] = useState<GalaxyNavigationMode>("overview");
@@ -20,6 +22,8 @@ export function useGalaxyNavigation() {
         useState<GalacticNavigationTarget | null>(null);
     const [focusRequestId, setFocusRequestId] = useState(0);
     const [blackHoleFocusRequestId, setBlackHoleFocusRequestId] = useState(0);
+    const [activeNebulaId, setActiveNebulaId] = useState<string | null>(null);
+    const [nebulaFocusRequestId, setNebulaFocusRequestId] = useState(0);
 
     const selectTarget = useCallback(
         (target: GalacticNavigationTarget) => {
@@ -79,10 +83,38 @@ export function useGalaxyNavigation() {
         setFocusRequestId((requestId) => requestId + 1);
     }, [mode]);
 
+    const enterNebula = useCallback(() => {
+        if (
+            mode !== "focus" ||
+            !selectedTarget ||
+            selectedTarget.type !== "nebula" ||
+            activeTarget?.id !== selectedTarget.id ||
+            !getNebulaById(selectedTarget.id)
+        ) {
+            return;
+        }
+        setActiveNebulaId(selectedTarget.id);
+        setMode("nebula");
+        setNebulaFocusRequestId((requestId) => requestId + 1);
+    }, [activeTarget, mode, selectedTarget]);
+
+    const refocusNebula = useCallback(() => {
+        if (mode !== "nebula") return;
+        setNebulaFocusRequestId((requestId) => requestId + 1);
+    }, [mode]);
+
+    const exitNebula = useCallback(() => {
+        if (mode !== "nebula") return;
+        setMode("focus");
+        setActiveNebulaId(null);
+        setFocusRequestId((requestId) => requestId + 1);
+    }, [mode]);
+
     const resetOverview = useCallback(() => {
         galaxyTravelManager.cancelTravel();
         setSelectedTarget(null);
         setActiveTarget(null);
+        setActiveNebulaId(null);
         setMode("overview");
     }, []);
 
@@ -92,6 +124,8 @@ export function useGalaxyNavigation() {
         activeTarget,
         focusRequestId,
         blackHoleFocusRequestId,
+        activeNebulaId,
+        nebulaFocusRequestId,
         selectTarget,
         clearSelection,
         focusSelected,
@@ -100,6 +134,9 @@ export function useGalaxyNavigation() {
         enterBlackHole,
         refocusBlackHole,
         exitBlackHole,
+        enterNebula,
+        refocusNebula,
+        exitNebula,
         resetOverview,
     };
 }

@@ -1,9 +1,12 @@
 import {
     GALACTIC_SCENE_SCALE,
-    galacticPolarPosition,
     nearbyGalacticPosition,
     type ScenePosition,
 } from "@/engine/scale/CoordinateTransformer";
+import {
+    nebulae,
+    SOLAR_SYSTEM_GALACTIC_POSITION,
+} from "@/data/nebulae";
 
 export type GalacticTargetType =
     | "galacticCenter"
@@ -30,6 +33,8 @@ export interface GalacticNavigationTarget {
     navigationName: string;
     navigationRadius: number;
     facts: readonly GalacticTargetFact[];
+    markerColor?: string;
+    markerLabelOffset?: number;
     localSpaceDestination?: "solarSystem";
     distanceFromGalacticCenterLightYears?: number;
 }
@@ -45,7 +50,7 @@ export interface GalaxyConfig {
     locations: readonly GalacticNavigationTarget[];
 }
 
-const solarSystemPosition = galacticPolarPosition(1120, -0.58, 5);
+const solarSystemPosition = SOLAR_SYSTEM_GALACTIC_POSITION;
 
 export const milkyWayConfig: GalaxyConfig = {
     id: "milky-way",
@@ -106,5 +111,27 @@ export const milkyWayConfig: GalaxyConfig = {
             ],
             distanceFromGalacticCenterLightYears: 27000,
         },
+        ...nebulae.map(
+            (nebula, index): GalacticNavigationTarget => ({
+                id: nebula.id,
+                name: nebula.name,
+                type: "nebula",
+                position: nebula.galacticPosition,
+                description: nebula.description,
+                markerVisible: true,
+                navigationName: nebula.name,
+                navigationRadius: nebula.navigationRadius,
+                markerColor: nebula.palette.marker,
+                markerLabelOffset: 52 + (index % 3) * 17,
+                facts: [
+                    { label: "Catalog", value: nebula.catalogName },
+                    { label: "Type", value: nebula.classification },
+                    { label: "Constellation", value: nebula.constellation },
+                    { label: "Distance", value: nebula.distanceLabel },
+                    { label: "Scale", value: nebula.approximateSizeLy },
+                    ...nebula.facts,
+                ],
+            })
+        ),
     ],
 };

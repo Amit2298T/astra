@@ -23,6 +23,45 @@ export function galacticPolarPosition(
 }
 
 /**
+ * Converts heliocentric Galactic longitude, latitude, and distance into the
+ * compressed Milky Way scene around a known Solar System anchor. Longitude
+ * zero points from the Sun toward the Galactic Center; latitude controls the
+ * small height above or below the disk. This is an educational placement,
+ * not a precision astrometry pipeline.
+ */
+export function heliocentricGalacticPosition(
+    solarSystemPosition: ScenePosition,
+    distanceLightYears: number,
+    longitudeDegrees: number,
+    latitudeDegrees: number,
+    solarGalactocentricDistanceLightYears = 27000
+): ScenePosition {
+    const solarRadius = Math.hypot(
+        solarSystemPosition[0],
+        solarSystemPosition[2]
+    );
+    const sceneDistance =
+        distanceLightYears *
+        (solarRadius / solarGalactocentricDistanceLightYears);
+    const solarAngle = Math.atan2(
+        solarSystemPosition[2],
+        solarSystemPosition[0]
+    );
+    const longitude = (longitudeDegrees * Math.PI) / 180;
+    const latitude = (latitudeDegrees * Math.PI) / 180;
+    const directionAngle = solarAngle + Math.PI + longitude;
+    const planarDistance = sceneDistance * Math.cos(latitude);
+
+    return [
+        solarSystemPosition[0] +
+            Math.cos(directionAngle) * planarDistance,
+        solarSystemPosition[1] + Math.sin(latitude) * sceneDistance,
+        solarSystemPosition[2] +
+            Math.sin(directionAngle) * planarDistance,
+    ];
+}
+
+/**
  * Converts a real local separation into a deliberately tiny galactic offset.
  * This is for marker legibility only, not for rendering the local-space scene.
  */

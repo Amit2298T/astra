@@ -10,6 +10,7 @@ interface GalacticInfoOverlayProps {
     onTravel: () => void;
     onEnterLocalSpace: () => void;
     onEnterBlackHole?: () => void;
+    onEnterNebula?: () => void;
     onClose: () => void;
 }
 
@@ -21,6 +22,7 @@ export function GalacticInfoOverlay({
     onTravel,
     onEnterLocalSpace,
     onEnterBlackHole,
+    onEnterNebula,
     onClose,
 }: GalacticInfoOverlayProps) {
     return (
@@ -43,8 +45,11 @@ export function GalacticInfoOverlay({
             </div>
 
             <div className={styles.facts}>
-                {target.facts.map((fact) => (
-                    <div className={styles.fact} key={fact.label}>
+                {target.facts.map((fact, index) => (
+                    <div
+                        className={styles.fact}
+                        key={`galactic-${target.id}-${fact.label}-${index}`}
+                    >
                         <span className={styles.factLabel}>{fact.label}</span>
                         <span className={styles.factValue}>{fact.value}</span>
                     </div>
@@ -80,6 +85,16 @@ export function GalacticInfoOverlay({
                             onClick={onEnterBlackHole}
                         >
                             Enter Sagittarius A*
+                        </button>
+                    )}
+                {target.type === "nebula" &&
+                    isActiveTarget &&
+                    onEnterNebula && (
+                        <button
+                            className={styles.localButton}
+                            onClick={onEnterNebula}
+                        >
+                            Enter Nebula
                         </button>
                     )}
             </div>

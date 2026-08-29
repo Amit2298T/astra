@@ -353,9 +353,9 @@ export function ObjectInfoOverlay({
                         fontSize: 11,
                     }}
                 >
-                    {dwarfPlanet.facts.map((fact) => (
+                    {dwarfPlanet.facts.map((fact, index) => (
                         <div
-                            key={fact.label}
+                            key={`dwarf-planet-${dwarfPlanet.id}-${fact.label}-${index}`}
                             style={{
                                 display: "flex",
                                 justifyContent: "space-between",
