@@ -12,11 +12,13 @@ import styles from "./FreeFlightHUD.module.css";
 interface FreeFlightHUDProps {
     onSolarSystemOverview?: () => void;
     onReturnToSystem?: () => void;
+    onEnterGalaxyView?: () => void;
 }
 
 export function FreeFlightHUD({
     onSolarSystemOverview,
     onReturnToSystem,
+    onEnterGalaxyView,
 }: FreeFlightHUDProps) {
     const [isLocked, setIsLocked] = useState(false);
     const [navData, setNavData] = useState<NavigationData>(() =>
@@ -295,6 +297,25 @@ export function FreeFlightHUD({
                 }}
             >
                 Solar System Overview
+            </button>
+
+            <button
+                onClick={onEnterGalaxyView}
+                style={{
+                    width: "100%",
+                    marginTop: 8,
+                    background: "rgba(14, 116, 144, 0.18)",
+                    border: "1px solid rgba(125, 211, 252, 0.3)",
+                    borderRadius: 8,
+                    color: "#bae6fd",
+                    padding: "8px 14px",
+                    fontSize: 12,
+                    cursor: "pointer",
+                    letterSpacing: "0.04em",
+                    fontWeight: 600,
+                }}
+            >
+                Galaxy View
             </button>
         </div>
     );

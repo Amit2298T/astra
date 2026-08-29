@@ -2,9 +2,10 @@
 
 interface MainHUDProps {
     onEnterFreeRoam: () => void;
+    onEnterGalaxyView: () => void;
 }
 
-export function MainHUD({ onEnterFreeRoam }: MainHUDProps) {
+export function MainHUD({ onEnterFreeRoam, onEnterGalaxyView }: MainHUDProps) {
     return (
         <div
             style={{
@@ -16,6 +17,22 @@ export function MainHUD({ onEnterFreeRoam }: MainHUDProps) {
                 gap: 12,
             }}
         >
+            <button
+                onClick={onEnterGalaxyView}
+                style={{
+                    background: "rgba(8, 47, 73, 0.78)",
+                    border: "1px solid rgba(125, 211, 252, 0.32)",
+                    borderRadius: 12,
+                    color: "#d6f3ff",
+                    padding: "10px 16px",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    letterSpacing: "0.06em",
+                    cursor: "pointer",
+                }}
+            >
+                Galaxy View
+            </button>
             <button
                 onClick={onEnterFreeRoam}
                 style={{

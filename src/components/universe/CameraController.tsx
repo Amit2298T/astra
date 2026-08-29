@@ -36,6 +36,18 @@ const tempTargetQuat = new THREE.Quaternion();
 const tempTargetVelocity = new THREE.Vector3();
 const tempFollowDirection = new THREE.Vector3();
 const overviewPosition = new THREE.Vector3(0, 20, 40);
+const galaxyOverviewPosition = new THREE.Vector3(2250, 1300, 2400);
+const galaxyCenter = new THREE.Vector3(0, 0, 0);
+
+function updateGalaxyOverviewPosition(aspectRatio: number): void {
+    if (aspectRatio < 0.75) {
+        galaxyOverviewPosition.set(4800, 2800, 5100);
+    } else if (aspectRatio < 1.3) {
+        galaxyOverviewPosition.set(3650, 2150, 3900);
+    } else {
+        galaxyOverviewPosition.set(2250, 1300, 2400);
+    }
+}
 
 export function CameraController({
     selectedTarget,
@@ -45,7 +57,7 @@ export function CameraController({
     onArrival,
     onTravelFailure,
 }: CameraControllerProps) {
-    const { camera, gl } = useThree();
+    const { camera, gl, size } = useThree();
 
     const modeRef = useRef<CameraMode>(mode);
     const orbitTargetRef = useRef<string | null>(activeOrbitTarget);
@@ -63,11 +75,22 @@ export function CameraController({
         initializedTargetRef.current = false;
         hasFollowDirectionRef.current = false;
 
-        if (mode === "focus" || mode === "follow" || mode === "system") {
+        if (
+            mode === "focus" ||
+            mode === "follow" ||
+            mode === "system" ||
+            mode === "galaxy"
+        ) {
             isCameraTransitioningRef.current = true;
             isTargetTransitioningRef.current = true;
         }
     }, [mode, activeOrbitTarget]);
+
+    useEffect(() => {
+        if (mode === "galaxy") {
+            isCameraTransitioningRef.current = true;
+        }
+    }, [mode, size.width, size.height]);
 
     // Free-flight input lifecycle is independent from object selection.
     useEffect(() => {
@@ -98,6 +121,30 @@ export function CameraController({
 
     useFrame((_, delta) => {
         const controls = controlsRef.current;
+
+        if (modeRef.current === "galaxy") {
+            if (!controls) return;
+
+            updateGalaxyOverviewPosition(size.width / size.height);
+
+            if (isCameraTransitioningRef.current) {
+                const galaxyLerpFactor = 1 - Math.exp(-2.8 * delta);
+                controls.target.lerp(galaxyCenter, galaxyLerpFactor);
+                camera.position.lerp(galaxyOverviewPosition, galaxyLerpFactor);
+                controls.update();
+
+                if (
+                    controls.target.distanceTo(galaxyCenter) < 0.5 &&
+                    camera.position.distanceTo(galaxyOverviewPosition) < 2
+                ) {
+                    controls.target.copy(galaxyCenter);
+                    camera.position.copy(galaxyOverviewPosition);
+                    controls.update();
+                    isCameraTransitioningRef.current = false;
+                }
+            }
+            return;
+        }
 
         // 1. Mode: FREE FLIGHT
         if (modeRef.current === "freeFlight") {

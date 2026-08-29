@@ -1,72 +1,52 @@
 "use client";
 
-import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
-import { Suspense, useState, useCallback, useRef } from "react";
+import { Canvas } from "@react-three/fiber";
+import { useCallback, useRef, useState } from "react";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
-import { Sun } from "./Sun";
-import { Planet } from "./Planet";
-import { OrbitRing } from "./OrbitRing";
-import { StarField } from "./StarField";
-import { Spacecraft } from "./spacecraft/Spacecraft";
-import { StarSystem } from "./stars/StarSystem";
-import { CameraController } from "./CameraController";
-import { ObjectInfoOverlay } from "../ui/ObjectInfoOverlay";
-import { FreeFlightHUD } from "../ui/FreeFlightHUD";
-import { MainHUD } from "../ui/MainHUD";
-import { TravelHUD } from "../ui/TravelHUD";
-
-import { solarSystemData } from "@/data/solarSystem";
-import { spacecraftData } from "@/data/spacecraft";
-import { starSystemsData } from "@/data/starSystems";
 import type { CameraMode, SelectedObject } from "@/engine/camera/types";
 import { travelManager } from "@/engine/navigation/TravelManager";
+import { FreeFlightHUD } from "../ui/FreeFlightHUD";
+import { GalaxyHUD } from "../ui/GalaxyHUD";
+import { MainHUD } from "../ui/MainHUD";
+import { ObjectInfoOverlay } from "../ui/ObjectInfoOverlay";
+import { TravelHUD } from "../ui/TravelHUD";
+import { CameraController } from "./CameraController";
+import { MilkyWay } from "./galaxy/MilkyWay";
+import { LocalUniverseLayer } from "./LocalUniverseLayer";
+import { StarField } from "./StarField";
 
 export function UniverseCanvas() {
-    const [selectedObject, setSelectedObject] = useState<SelectedObject | null>(
-        null
-    );
-    const [activeOrbitTarget, setActiveOrbitTarget] = useState<string | null>(
-        null
-    );
+    const [selectedObject, setSelectedObject] = useState<SelectedObject | null>(null);
+    const [activeOrbitTarget, setActiveOrbitTarget] = useState<string | null>(null);
     const [cameraMode, setCameraMode] = useState<CameraMode>("freeFlight");
-
     const controlsRef = useRef<OrbitControlsImpl>(null);
 
     const isFreeFlight = cameraMode === "freeFlight";
     const isTravel = cameraMode === "travel";
+    const isGalaxy = cameraMode === "galaxy";
 
-    // Single click: select object only — DO NOT move camera or set active orbit target
     const handleSelectPlanet = useCallback(
         (name: string) => {
             if (isTravel) return;
-            setSelectedObject({
-                id: name.toLowerCase(),
-                name,
-                type: "planet",
-            });
+            setSelectedObject({ id: name.toLowerCase(), name, type: "planet" });
         },
         [isTravel]
     );
 
     const handleSelectObject = useCallback(
-        (obj: SelectedObject) => {
+        (object: SelectedObject) => {
             if (isTravel) return;
-            setSelectedObject(obj);
+            setSelectedObject(object);
         },
         [isTravel]
     );
 
-    // Double click: trigger intentional focus view and make object the orbit center
     const handleFocusPlanet = useCallback(
         (name: string) => {
             if (isTravel) return;
-            setSelectedObject({
-                id: name.toLowerCase(),
-                name,
-                type: "planet",
-            });
+            setSelectedObject({ id: name.toLowerCase(), name, type: "planet" });
             setActiveOrbitTarget(name);
             setCameraMode("focus");
         },
@@ -74,16 +54,15 @@ export function UniverseCanvas() {
     );
 
     const handleFocusObject = useCallback(
-        (obj: SelectedObject) => {
+        (object: SelectedObject) => {
             if (isTravel) return;
-            setSelectedObject(obj);
-            setActiveOrbitTarget(obj.name);
+            setSelectedObject(object);
+            setActiveOrbitTarget(object.name);
             setCameraMode("focus");
         },
         [isTravel]
     );
 
-    // Explicit Focus View button on overlay
     const handleFocusActive = useCallback(() => {
         if (!selectedObject) return;
         setActiveOrbitTarget(selectedObject.name);
@@ -118,14 +97,12 @@ export function UniverseCanvas() {
         setCameraMode("freeFlight");
     }, []);
 
-    // Free Roam releases every target at the exact current camera transform.
     const handleEnterFreeRoam = useCallback(() => {
         travelManager.cancelTravel();
         setActiveOrbitTarget(null);
         setCameraMode("freeFlight");
     }, []);
 
-    // Solar System Overview: intentional return to solar system overview vantage point
     const handleSolarSystemOverview = useCallback(() => {
         travelManager.cancelTravel();
         setSelectedObject(null);
@@ -133,79 +110,48 @@ export function UniverseCanvas() {
         setCameraMode("system");
     }, []);
 
-    // Center on Sun: explicit object focus inspection of the Sun
+    const handleEnterGalaxyView = useCallback(() => {
+        travelManager.cancelTravel();
+        setSelectedObject(null);
+        setActiveOrbitTarget(null);
+        setCameraMode("galaxy");
+    }, []);
+
+    const handleReturnToLocalSpace = useCallback(() => {
+        setSelectedObject(null);
+        setActiveOrbitTarget("Sun");
+        setCameraMode("system");
+    }, []);
+
     const handleCenterOnSun = useCallback(() => {
         travelManager.cancelTravel();
-        setSelectedObject({
-            id: "sun",
-            name: "Sun",
-            type: "star",
-        });
+        setSelectedObject({ id: "sun", name: "Sun", type: "star" });
         setActiveOrbitTarget("Sun");
         setCameraMode("focus");
     }, []);
 
-    const handleCloseOverlay = useCallback(() => {
-        setSelectedObject(null);
-    }, []);
-
-    // Empty space click dismisses the overlay without changing camera/input state.
     const handlePointerMissed = useCallback(() => {
-        if (isTravel) return;
-        if (selectedObject) {
-            setSelectedObject(null);
-        }
+        if (!isTravel && selectedObject) setSelectedObject(null);
     }, [isTravel, selectedObject]);
 
     return (
         <>
             <Canvas
-                camera={{
-                    position: [0, 20, 40],
-                    fov: 50,
-                    far: 2500,
-                }}
-                gl={{
-                    antialias: true,
-                    toneMapping: 3 /* ACESFilmicToneMapping */,
-                }}
+                camera={{ position: [0, 20, 40], fov: 50, far: 12000 }}
+                gl={{ antialias: true, toneMapping: 3 }}
                 onPointerMissed={handlePointerMissed}
             >
-                {/* Low ambient so Sun and stars are the primary luminaries */}
                 <ambientLight intensity={0.08} />
 
-                <Sun
-                    onSelect={handleSelectObject}
-                    onFocus={handleFocusObject}
-                />
-
-                <Spacecraft
-                    config={spacecraftData.voyager1}
-                    onSelect={handleSelectObject}
-                    onFocus={handleFocusObject}
-                />
-
-                <StarSystem
-                    config={starSystemsData.alphaCentauri}
-                    onSelect={handleSelectObject}
-                    onFocus={handleFocusObject}
-                />
-
-                <Suspense fallback={null}>
-
-                    {/* Orbit rings + planets — driven from solarSystem data */}
-                    {solarSystemData.planets.map((planet) => (
-                        <group key={planet.name}>
-                            <OrbitRing radius={planet.orbitRadius} />
-                            <Planet
-                                config={planet}
-                                onSelect={handleSelectPlanet}
-                                onFocus={handleFocusPlanet}
-                            />
-                        </group>
-                    ))}
-
-                </Suspense>
+                {!isGalaxy && (
+                    <LocalUniverseLayer
+                        onSelectPlanet={handleSelectPlanet}
+                        onFocusPlanet={handleFocusPlanet}
+                        onSelectObject={handleSelectObject}
+                        onFocusObject={handleFocusObject}
+                    />
+                )}
+                {isGalaxy && <MilkyWay />}
 
                 <CameraController
                     selectedTarget={selectedObject?.name ?? null}
@@ -216,34 +162,37 @@ export function UniverseCanvas() {
                     onTravelFailure={handleTravelFailure}
                 />
 
-                {/* Registered after camera controls so its shell follows the final frame position. */}
-                <StarField />
-
+                <StarField opacityScale={isGalaxy ? 0.34 : 1} />
                 <OrbitControls
                     ref={controlsRef}
-                    enabled={!isFreeFlight && !isTravel && activeOrbitTarget !== null}
+                    enabled={
+                        isGalaxy ||
+                        (!isFreeFlight && !isTravel && activeOrbitTarget !== null)
+                    }
+                    enablePan={false}
+                    minDistance={isGalaxy ? 900 : 0}
+                    maxDistance={isGalaxy ? 8500 : Infinity}
                 />
             </Canvas>
 
-            {/* Standard-mode action for releasing the current camera target. */}
-            {!isFreeFlight && !isTravel && (
-                <MainHUD onEnterFreeRoam={handleEnterFreeRoam} />
+            {!isFreeFlight && !isTravel && !isGalaxy && (
+                <MainHUD
+                    onEnterFreeRoam={handleEnterFreeRoam}
+                    onEnterGalaxyView={handleEnterGalaxyView}
+                />
             )}
-
-            {/* Free Flight Navigation HUD (default active state) */}
             {isFreeFlight && (
                 <FreeFlightHUD
                     onSolarSystemOverview={handleSolarSystemOverview}
+                    onEnterGalaxyView={handleEnterGalaxyView}
                 />
             )}
-
-            {/* Autopilot Travel HUD */}
-            {isTravel && (
-                <TravelHUD onCancelTravel={handleEnterFreeRoam} />
+            {isGalaxy && (
+                <GalaxyHUD onReturnToLocalSpace={handleReturnToLocalSpace} />
             )}
+            {isTravel && <TravelHUD onCancelTravel={handleEnterFreeRoam} />}
 
-            {/* Selection overlay (supporting Planets, Spacecraft, Stars, Exoplanets) */}
-            {selectedObject && !isTravel && (
+            {selectedObject && !isTravel && !isGalaxy && (
                 <ObjectInfoOverlay
                     target={selectedObject}
                     mode={cameraMode}
@@ -254,7 +203,7 @@ export function UniverseCanvas() {
                     onFreeRoam={handleEnterFreeRoam}
                     onSolarSystemOverview={handleSolarSystemOverview}
                     onCenterOnSun={handleCenterOnSun}
-                    onClose={handleCloseOverlay}
+                    onClose={() => setSelectedObject(null)}
                 />
             )}
         </>

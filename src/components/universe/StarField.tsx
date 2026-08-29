@@ -126,7 +126,11 @@ function StarPoints({ data, size, opacity }: StarPointsProps) {
     );
 }
 
-export function StarField() {
+interface StarFieldProps {
+    opacityScale?: number;
+}
+
+export function StarField({ opacityScale = 1 }: StarFieldProps) {
     const fieldRef = useRef<THREE.Group>(null);
     const mediumRef = useRef<THREE.Group>(null);
     const prominentRef = useRef<THREE.Group>(null);
@@ -145,15 +149,23 @@ export function StarField() {
 
     return (
         <group ref={fieldRef}>
-            <StarPoints data={distantStars} size={0.62} opacity={0.58} />
+            <StarPoints
+                data={distantStars}
+                size={0.62}
+                opacity={0.58 * opacityScale}
+            />
             <group ref={mediumRef}>
-                <StarPoints data={mediumStars} size={0.92} opacity={0.72} />
+                <StarPoints
+                    data={mediumStars}
+                    size={0.92}
+                    opacity={0.72 * opacityScale}
+                />
             </group>
             <group ref={prominentRef}>
                 <StarPoints
                     data={prominentStars}
                     size={1.35}
-                    opacity={0.82}
+                    opacity={0.82 * opacityScale}
                 />
             </group>
         </group>
