@@ -1,19 +1,45 @@
 import { Html } from "@react-three/drei";
+import type { ThreeEvent } from "@react-three/fiber";
 
-import type { GalacticLocation } from "@/data/galaxy";
+import type { GalacticNavigationTarget } from "@/data/galaxy";
 
 interface GalacticMarkerProps {
-    location: GalacticLocation;
+    location: GalacticNavigationTarget;
+    selected?: boolean;
+    emphasized?: boolean;
+    onSelect?: (location: GalacticNavigationTarget) => void;
 }
 
-export function GalacticMarker({ location }: GalacticMarkerProps) {
+export function GalacticMarker({
+    location,
+    selected = false,
+    emphasized = false,
+    onSelect,
+}: GalacticMarkerProps) {
     if (!location.markerVisible) return null;
 
     const isCenter = location.type === "galacticCenter";
     const markerColor = isCenter ? "#e8ad69" : "#67d5ff";
+    const emphasisScale = emphasized ? 1.22 : selected ? 1.12 : 1;
+
+    const handleClick = (event: ThreeEvent<MouseEvent>) => {
+        event.stopPropagation();
+        onSelect?.(location);
+    };
 
     return (
-        <group position={location.position}>
+        <group
+            position={location.position}
+            scale={emphasisScale}
+            onClick={handleClick}
+            onPointerOver={(event) => {
+                event.stopPropagation();
+                document.body.style.cursor = "pointer";
+            }}
+            onPointerOut={() => {
+                document.body.style.cursor = "auto";
+            }}
+        >
             <mesh position={[0, isCenter ? 22 : 18, 0]}>
                 <cylinderGeometry
                     args={[isCenter ? 1.4 : 1.2, isCenter ? 2.5 : 2, isCenter ? 44 : 36, 10]}
@@ -21,7 +47,7 @@ export function GalacticMarker({ location }: GalacticMarkerProps) {
                 <meshBasicMaterial
                     color={markerColor}
                     transparent
-                    opacity={0.58}
+                    opacity={emphasized ? 0.82 : selected ? 0.72 : 0.58}
                     depthWrite={false}
                     toneMapped={false}
                 />
@@ -31,7 +57,7 @@ export function GalacticMarker({ location }: GalacticMarkerProps) {
                 <meshBasicMaterial
                     color={markerColor}
                     transparent
-                    opacity={0.88}
+                    opacity={emphasized ? 1 : selected ? 0.96 : 0.88}
                     toneMapped={false}
                 />
             </mesh>
@@ -40,7 +66,7 @@ export function GalacticMarker({ location }: GalacticMarkerProps) {
                 <meshBasicMaterial
                     color={markerColor}
                     transparent
-                    opacity={0.62}
+                    opacity={emphasized ? 0.9 : selected ? 0.78 : 0.62}
                     side={2}
                     depthWrite={false}
                     toneMapped={false}

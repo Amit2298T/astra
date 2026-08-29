@@ -11,6 +11,9 @@ export const GALACTIC_SCENE_SCALE = {
     approximateRadiusLightYears: 50000,
 } as const;
 
+/** Shared cinematic viewing direction for galaxy-scale focus destinations. */
+export const GALACTIC_INSPECTION_DIRECTION: ScenePosition = [0.63, 0.38, 0.68];
+
 export function galacticPolarPosition(
     radius: number,
     angle: number,

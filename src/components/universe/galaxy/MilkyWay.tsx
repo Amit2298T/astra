@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { milkyWayConfig } from "@/data/galaxy";
 import { createSeededRandom, randomNormal } from "@/engine/math/seededRandom";
 import { GalacticMarker } from "./GalacticMarker";
+import type { GalacticNavigationTarget } from "@/data/galaxy";
 
 interface ParticlePopulation {
     positions: Float32Array;
@@ -181,24 +182,54 @@ function GalaxyPoints({
     );
 }
 
-export function MilkyWay() {
+interface MilkyWayProps {
+    selectedTargetId?: string;
+    activeTargetId?: string;
+    isTraveling?: boolean;
+    onSelectTarget?: (target: GalacticNavigationTarget) => void;
+}
+
+export function MilkyWay({
+    selectedTargetId,
+    activeTargetId,
+    isTraveling = false,
+    onSelectTarget,
+}: MilkyWayProps) {
     const populations = useMemo(
         () => ({ bulge: createBulge(), disk: createDisk(), dust: createDust() }),
         []
     );
 
     return (
-        <group rotation={[0, -0.14, 0]}>
-            <GalaxyPoints population={populations.bulge} size={6.4} opacity={0.5} />
-            <GalaxyPoints population={populations.disk} size={5.2} opacity={0.86} />
-            <GalaxyPoints
-                population={populations.dust}
-                size={10.5}
-                opacity={0.3}
-                blending={THREE.NormalBlending}
-            />
+        <group>
+            <group rotation={[0, -0.14, 0]}>
+                <GalaxyPoints
+                    population={populations.bulge}
+                    size={6.4}
+                    opacity={0.5}
+                />
+                <GalaxyPoints
+                    population={populations.disk}
+                    size={5.2}
+                    opacity={0.86}
+                />
+                <GalaxyPoints
+                    population={populations.dust}
+                    size={10.5}
+                    opacity={0.3}
+                    blending={THREE.NormalBlending}
+                />
+            </group>
             {milkyWayConfig.locations.map((location) => (
-                <GalacticMarker key={location.id} location={location} />
+                <GalacticMarker
+                    key={location.id}
+                    location={location}
+                    selected={selectedTargetId === location.id}
+                    emphasized={
+                        isTraveling && activeTargetId === location.id
+                    }
+                    onSelect={onSelectTarget}
+                />
             ))}
         </group>
     );

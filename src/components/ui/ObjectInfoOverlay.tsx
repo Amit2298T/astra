@@ -3,6 +3,7 @@
 import type { CameraMode, SelectedObject } from "@/engine/camera/types";
 import { getSpacecraftByName } from "@/data/spacecraft";
 import { getStarByName, getExoplanetByName } from "@/data/starSystems";
+import { getDwarfPlanetByName } from "@/data/dwarfPlanets";
 import styles from "./ObjectInfoOverlay.module.css";
 
 interface ObjectInfoOverlayProps {
@@ -44,6 +45,10 @@ export function ObjectInfoOverlay({
         target.type === "exoplanet"
             ? getExoplanetByName(target.name)
             : undefined;
+    const dwarfPlanet =
+        target.type === "dwarfPlanet"
+            ? getDwarfPlanetByName(target.name)
+            : undefined;
 
     // Subtitle categorization
     let subtitle = "Planet • Solar System";
@@ -53,6 +58,10 @@ export function ObjectInfoOverlay({
         subtitle = `Star • ${star.systemName} System`;
     } else if (exoplanet) {
         subtitle = `Exoplanet • ${exoplanet.systemName} System`;
+    }
+
+    if (dwarfPlanet) {
+        subtitle = `Dwarf Planet • ${dwarfPlanet.region}`;
     }
 
     return (
@@ -331,6 +340,47 @@ export function ObjectInfoOverlay({
                 </div>
             )}
 
+            {dwarfPlanet && (
+                <div
+                    style={{
+                        background: "rgba(255, 255, 255, 0.04)",
+                        border: "1px solid rgba(255, 255, 255, 0.07)",
+                        borderRadius: 12,
+                        padding: "10px 12px",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 6,
+                        fontSize: 11,
+                    }}
+                >
+                    {dwarfPlanet.facts.map((fact) => (
+                        <div
+                            key={fact.label}
+                            style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                gap: 16,
+                            }}
+                        >
+                            <span
+                                style={{ color: "rgba(255, 255, 255, 0.55)" }}
+                            >
+                                {fact.label}
+                            </span>
+                            <span
+                                style={{
+                                    fontWeight: 500,
+                                    color: "#cbd5e1",
+                                    textAlign: "right",
+                                }}
+                            >
+                                {fact.value}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            )}
+
             {/* Description */}
             <div
                 style={{
@@ -342,6 +392,7 @@ export function ObjectInfoOverlay({
                 {spacecraft?.description ??
                     star?.description ??
                     exoplanet?.description ??
+                    dwarfPlanet?.description ??
                     "Selected celestial body. Engage Focus View to orbit and inspect, or Travel To via Autopilot."}
             </div>
 

@@ -1,6 +1,7 @@
 import { getPlanetByName } from "@/data/solarSystem";
 import { getSpacecraftByName } from "@/data/spacecraft";
 import { getStarByName, getExoplanetByName } from "@/data/starSystems";
+import { getDwarfPlanetByName } from "@/data/dwarfPlanets";
 
 /**
  * Reusable celestial, stellar, and spacecraft navigation radius utility.
@@ -9,6 +10,11 @@ import { getStarByName, getExoplanetByName } from "@/data/starSystems";
 
 /** Calculate optimal camera focus distance generically for any celestial object */
 export function getFocusRadius(targetName: string): number {
+    const dwarfPlanetConfig = getDwarfPlanetByName(targetName);
+    if (dwarfPlanetConfig) {
+        return dwarfPlanetConfig.navigationRadius;
+    }
+
     const planetConfig = getPlanetByName(targetName);
     if (planetConfig) {
         if (planetConfig.hasRings && planetConfig.ringOuterRadius) {
@@ -47,6 +53,11 @@ export function getFocusRadius(targetName: string): number {
 
 /** Calculate trailing companion distance for follow mode */
 export function getFollowRadius(targetName: string): number {
+    const dwarfPlanetConfig = getDwarfPlanetByName(targetName);
+    if (dwarfPlanetConfig) {
+        return dwarfPlanetConfig.navigationRadius * 1.25;
+    }
+
     const planetConfig = getPlanetByName(targetName);
     if (planetConfig) {
         if (planetConfig.hasRings && planetConfig.ringOuterRadius) {

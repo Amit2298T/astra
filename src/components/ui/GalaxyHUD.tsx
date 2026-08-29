@@ -2,9 +2,13 @@ import styles from "./GalaxyHUD.module.css";
 
 interface GalaxyHUDProps {
     onReturnToLocalSpace: () => void;
+    returnLabel?: string;
 }
 
-export function GalaxyHUD({ onReturnToLocalSpace }: GalaxyHUDProps) {
+export function GalaxyHUD({
+    onReturnToLocalSpace,
+    returnLabel = "Return to Local Space",
+}: GalaxyHUDProps) {
     return (
         <div className={styles.hud}>
             <div>
@@ -12,7 +16,7 @@ export function GalaxyHUD({ onReturnToLocalSpace }: GalaxyHUDProps) {
                 <div className={styles.title}>The Milky Way</div>
             </div>
             <button className={styles.returnButton} onClick={onReturnToLocalSpace}>
-                Return to Local Space
+                {returnLabel}
             </button>
         </div>
     );

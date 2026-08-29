@@ -1,0 +1,24 @@
+.veil {
+    position: fixed;
+    inset: 0;
+    z-index: 29;
+    pointer-events: none;
+    background: #010207;
+    animation: reveal-scene 720ms ease-out forwards;
+}
+
+@keyframes reveal-scene {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .veil {
+        animation-duration: 140ms;
+    }
+}

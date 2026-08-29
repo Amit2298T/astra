@@ -16,7 +16,8 @@ export type ObjectType =
     | "spacecraft"
     | "star"
     | "blackHole"
-    | "exoplanet";
+    | "exoplanet"
+    | "dwarfPlanet";
 
 export interface SelectedObject {
     id: string;
