@@ -41,6 +41,11 @@ export const astronomySources = {
         "NASA Science / JPL",
         "https://science.nasa.gov/mission/voyager/voyager-1/"
     ),
+    voyagerHeliopause: reference(
+        "Voyager 1 heliopause crossing",
+        "NASA Science",
+        "https://science.nasa.gov/mission/voyager/questions-and-answers-with-dr-ed-stone/"
+    ),
     alphaCentauri: reference(
         "Hubble’s best image of Alpha Centauri A and B",
         "NASA / ESA Hubble",
@@ -115,5 +120,10 @@ export const astronomySources = {
         "Solar System Facts",
         "NASA Science",
         "https://science.nasa.gov/solar-system/solar-system-facts/"
+    ),
+    milkyWayScale: reference(
+        "Our Milky Way Galaxy: How Big is Space?",
+        "NASA Science",
+        "https://science.nasa.gov/universe/exoplanets/our-milky-way-galaxy-how-big-is-space/"
     ),
 } as const satisfies Record<string, SourceReference>;

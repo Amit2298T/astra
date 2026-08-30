@@ -623,6 +623,18 @@
 }
 
 .textLink { margin-top: 28px; font-size: .82rem; }
+.scaleLink {
+    display: inline-flex;
+    margin: 14px 0 0 24px;
+    align-items: center;
+    gap: 10px;
+    color: #9dc7d5;
+    font-size: .82rem;
+    font-weight: 650;
+    text-decoration: none;
+}
+.textLink:hover,
+.scaleLink:hover { color: #ffffff; }
 .scaleTrack { position: relative; padding-left: 28px; }
 .scaleTrack::before { position: absolute; top: 7px; bottom: 7px; left: 4px; width: 1px; content: ""; background: linear-gradient(#b197ec, rgba(177,151,236,.12)); }
 .scaleTrack > div { position: relative; display: grid; padding: 0 0 43px 24px; grid-template-columns: 42px 1fr; }
