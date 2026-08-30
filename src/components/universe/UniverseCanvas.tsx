@@ -2,11 +2,13 @@
 
 import { OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
 import type { CameraMode, SelectedObject } from "@/engine/camera/types";
 import { travelManager } from "@/engine/navigation/TravelManager";
+import type { ExplorerEntryTarget } from "@/engine/navigation/ExplorerEntry";
+import { galacticRegistry } from "@/engine/registry/GalacticRegistry";
 import { FreeFlightHUD } from "../ui/FreeFlightHUD";
 import { GalaxyHUD } from "../ui/GalaxyHUD";
 import { GalacticInfoOverlay } from "../ui/GalacticInfoOverlay";
@@ -14,6 +16,7 @@ import { GalaxyTravelHUD } from "../ui/GalaxyTravelHUD";
 import { BlackHoleOverlay } from "../ui/BlackHoleOverlay";
 import { BlackHoleTransitionVeil } from "../ui/BlackHoleTransitionVeil";
 import { NebulaOverlay } from "../ui/NebulaOverlay";
+import { StarClusterOverlay } from "../ui/StarClusterOverlay";
 import { MainHUD } from "../ui/MainHUD";
 import { ObjectInfoOverlay } from "../ui/ObjectInfoOverlay";
 import { TravelHUD } from "../ui/TravelHUD";
@@ -32,22 +35,37 @@ import { NebulaScene } from "./galaxy/nebula/NebulaScene";
 import { NebulaCameraController } from "./galaxy/nebula/NebulaCameraController";
 import { getNebulaById } from "@/data/nebulae";
 import { SOLAR_SYSTEM_GALACTIC_POSITION } from "@/data/nebulae";
+import { getStarClusterById } from "@/data/starClusters";
 import { NebulaSkyCues } from "./NebulaSkyCues";
 import { ScaleTransitionIndicator } from "../ui/ScaleTransitionIndicator";
 import { FadingSceneGroup } from "./scale/FadingSceneGroup";
 import { ScaleTransitionController } from "./scale/ScaleTransitionController";
 import { useScaleTransition } from "./scale/useScaleTransition";
 import { SolarNeighborhoodTransitionMarker } from "./scale/SolarNeighborhoodTransitionMarker";
+import { StarClusterScene } from "./galaxy/clusters/StarClusterScene";
+import { ClusterCameraController } from "./galaxy/clusters/ClusterCameraController";
+import { StarClusterSkyCues } from "./StarClusterSkyCues";
 import {
     LOCAL_ORBIT_MAX_DISTANCE,
     smoothRange,
 } from "@/engine/scale/ScaleTransition";
 
-export function UniverseCanvas() {
+interface UniverseCanvasProps {
+    initialTarget?: ExplorerEntryTarget | null;
+}
+
+type PendingGalaxyEntry = Extract<
+    ExplorerEntryTarget,
+    "milky-way" | "sagittarius-a" | "orion-nebula"
+>;
+
+export function UniverseCanvas({ initialTarget = null }: UniverseCanvasProps) {
     const [selectedObject, setSelectedObject] = useState<SelectedObject | null>(null);
     const [activeOrbitTarget, setActiveOrbitTarget] = useState<string | null>(null);
     const [cameraMode, setCameraMode] = useState<CameraMode>("freeFlight");
     const controlsRef = useRef<OrbitControlsImpl>(null);
+    const hasHandledInitialTargetRef = useRef(false);
+    const pendingGalaxyEntryRef = useRef<PendingGalaxyEntry | null>(null);
     const galaxyNavigation = useGalaxyNavigation();
     const scaleTransition = useScaleTransition();
 
@@ -58,7 +76,10 @@ export function UniverseCanvas() {
     const activeNebula = getNebulaById(galaxyNavigation.activeNebulaId);
     const isNebula =
         isGalaxy && galaxyNavigation.mode === "nebula" && activeNebula !== null;
-    const isGalaxyCloseUp = isBlackHole || isNebula;
+    const activeCluster = getStarClusterById(galaxyNavigation.activeClusterId);
+    const isCluster =
+        isGalaxy && galaxyNavigation.mode === "cluster" && activeCluster !== null;
+    const isGalaxyCloseUp = isBlackHole || isNebula || isCluster;
     const isScaleLocal = scaleTransition.phase === "local";
     const isScaleGalaxy = scaleTransition.phase === "galaxy";
     const showLocalLayer = !isScaleGalaxy;
@@ -213,7 +234,26 @@ export function UniverseCanvas() {
     const handleCompleteGalaxyTransition = useCallback(() => {
         setCameraMode("galaxy");
         scaleTransition.finishOut();
-    }, [scaleTransition]);
+
+        const pendingEntry = pendingGalaxyEntryRef.current;
+        if (pendingEntry === "milky-way") {
+            pendingGalaxyEntryRef.current = null;
+            return;
+        }
+
+        const targetId =
+            pendingEntry === "sagittarius-a"
+                ? "galactic-center"
+                : pendingEntry === "orion-nebula"
+                  ? "orion-nebula"
+                  : null;
+        const target = targetId ? galacticRegistry.getById(targetId) : null;
+        if (target) {
+            galaxyNavigation.focusTarget(target);
+        } else {
+            pendingGalaxyEntryRef.current = null;
+        }
+    }, [galaxyNavigation, scaleTransition]);
 
     const handleCompleteLocalTransition = useCallback(() => {
         setCameraMode("system");
@@ -236,6 +276,69 @@ export function UniverseCanvas() {
             setSelectedObject(null);
         }
     }, [galaxyNavigation, isGalaxyCloseUp, isGalaxy, isTravel, selectedObject]);
+
+    useEffect(() => {
+        if (hasHandledInitialTargetRef.current || !initialTarget) return;
+        hasHandledInitialTargetRef.current = true;
+
+        const entryFrame = window.requestAnimationFrame(() => {
+            if (initialTarget === "solar-system") {
+                handleSolarSystemOverview();
+                return;
+            }
+
+            if (initialTarget === "voyager-1") {
+                setSelectedObject({
+                    id: "voyager-1",
+                    name: "Voyager 1",
+                    type: "spacecraft",
+                });
+                setActiveOrbitTarget("Voyager 1");
+                setCameraMode("focus");
+                return;
+            }
+
+            if (initialTarget === "alpha-centauri") {
+                setSelectedObject({
+                    id: "alpha-centauri-a",
+                    name: "Alpha Centauri A",
+                    type: "star",
+                });
+                setActiveOrbitTarget("Alpha Centauri A");
+                setCameraMode("focus");
+                return;
+            }
+
+            pendingGalaxyEntryRef.current = initialTarget;
+            handleEnterGalaxyView();
+        });
+
+        return () => window.cancelAnimationFrame(entryFrame);
+    }, [handleEnterGalaxyView, handleSolarSystemOverview, initialTarget]);
+
+    useEffect(() => {
+        const pendingEntry = pendingGalaxyEntryRef.current;
+        if (
+            (pendingEntry !== "sagittarius-a" &&
+                pendingEntry !== "orion-nebula") ||
+            cameraMode !== "galaxy" ||
+            scaleTransition.phase !== "galaxy" ||
+            galaxyNavigation.mode !== "focus" ||
+            galaxyNavigation.selectedTarget?.id !==
+                (pendingEntry === "sagittarius-a"
+                    ? "galactic-center"
+                    : "orion-nebula")
+        ) {
+            return;
+        }
+
+        pendingGalaxyEntryRef.current = null;
+        if (pendingEntry === "sagittarius-a") {
+            galaxyNavigation.enterBlackHole();
+        } else {
+            galaxyNavigation.enterNebula();
+        }
+    }, [cameraMode, galaxyNavigation, scaleTransition.phase]);
 
     return (
         <>
@@ -351,6 +454,19 @@ export function UniverseCanvas() {
                     </>
                 )}
 
+                {isCluster && activeCluster && (
+                    <>
+                        <StarClusterScene config={activeCluster} />
+                        <ClusterCameraController
+                            config={activeCluster}
+                            focusRequestId={
+                                galaxyNavigation.clusterFocusRequestId
+                            }
+                            controlsRef={controlsRef}
+                        />
+                    </>
+                )}
+
                 <StarField
                     opacityScale={
                         isGalaxyCloseUp
@@ -370,6 +486,7 @@ export function UniverseCanvas() {
                         <FadingSceneGroup opacity={localSkyOpacity}>
                             <GalacticCenterDirectionMarker />
                             <NebulaSkyCues />
+                            <StarClusterSkyCues />
                         </FadingSceneGroup>
                     </>
                 )}
@@ -387,6 +504,8 @@ export function UniverseCanvas() {
                             ? 8.5
                             : isNebula && activeNebula
                               ? activeNebula.closeUpMinDistance
+                              : isCluster && activeCluster
+                                ? activeCluster.closeUpMinDistance
                               : isScaleGalaxy
                                 ? 360
                                 : 0
@@ -396,6 +515,8 @@ export function UniverseCanvas() {
                             ? 90
                             : isNebula && activeNebula
                               ? activeNebula.closeUpMaxDistance
+                              : isCluster && activeCluster
+                                ? activeCluster.closeUpMaxDistance
                               : isScaleGalaxy
                                 ? 8500
                                 : LOCAL_ORBIT_MAX_DISTANCE
@@ -449,6 +570,7 @@ export function UniverseCanvas() {
                 isScaleGalaxy &&
                 !isBlackHole &&
                 !isNebula &&
+                !isCluster &&
                 galaxyNavigation.selectedTarget &&
                 galaxyNavigation.mode !== "travel" && (
                     <GalacticInfoOverlay
@@ -463,6 +585,7 @@ export function UniverseCanvas() {
                         onEnterLocalSpace={handleReturnToLocalSpace}
                         onEnterBlackHole={galaxyNavigation.enterBlackHole}
                         onEnterNebula={galaxyNavigation.enterNebula}
+                        onEnterCluster={galaxyNavigation.enterCluster}
                         onClose={galaxyNavigation.clearSelection}
                     />
                 )}
@@ -485,10 +608,19 @@ export function UniverseCanvas() {
                     onReturn={galaxyNavigation.exitNebula}
                 />
             )}
+            {isCluster && activeCluster && (
+                <StarClusterOverlay
+                    cluster={activeCluster}
+                    onRefocus={galaxyNavigation.refocusCluster}
+                    onReturn={galaxyNavigation.exitCluster}
+                />
+            )}
             {isGalaxy && isScaleGalaxy && (
                 <BlackHoleTransitionVeil
                     phase={
-                        isNebula
+                        isCluster
+                            ? "cluster"
+                            : isNebula
                             ? "nebula"
                             : isBlackHole
                               ? "closeUp"

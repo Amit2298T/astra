@@ -11,6 +11,7 @@ interface GalacticInfoOverlayProps {
     onEnterLocalSpace: () => void;
     onEnterBlackHole?: () => void;
     onEnterNebula?: () => void;
+    onEnterCluster?: () => void;
     onClose: () => void;
 }
 
@@ -23,6 +24,7 @@ export function GalacticInfoOverlay({
     onEnterLocalSpace,
     onEnterBlackHole,
     onEnterNebula,
+    onEnterCluster,
     onClose,
 }: GalacticInfoOverlayProps) {
     return (
@@ -95,6 +97,16 @@ export function GalacticInfoOverlay({
                             onClick={onEnterNebula}
                         >
                             Enter Nebula
+                        </button>
+                    )}
+                {target.type === "starCluster" &&
+                    isActiveTarget &&
+                    onEnterCluster && (
+                        <button
+                            className={styles.localButton}
+                            onClick={onEnterCluster}
+                        >
+                            Enter Cluster
                         </button>
                     )}
             </div>

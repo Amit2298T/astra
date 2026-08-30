@@ -7,6 +7,7 @@ import {
     nebulae,
     SOLAR_SYSTEM_GALACTIC_POSITION,
 } from "@/data/nebulae";
+import { starClusters } from "@/data/starClusters";
 
 export type GalacticTargetType =
     | "galacticCenter"
@@ -130,6 +131,28 @@ export const milkyWayConfig: GalaxyConfig = {
                     { label: "Distance", value: nebula.distanceLabel },
                     { label: "Scale", value: nebula.approximateSizeLy },
                     ...nebula.facts,
+                ],
+            })
+        ),
+        ...starClusters.map(
+            (cluster, index): GalacticNavigationTarget => ({
+                id: cluster.id,
+                name: cluster.name,
+                type: "starCluster",
+                position: cluster.galacticPosition,
+                description: cluster.description,
+                markerVisible: true,
+                navigationName: cluster.name,
+                navigationRadius: cluster.navigationRadius,
+                markerColor: cluster.colors.marker,
+                markerLabelOffset: 44 + index * 11,
+                facts: [
+                    { label: "Catalog", value: cluster.catalogName },
+                    { label: "Type", value: cluster.classification },
+                    { label: "Constellation", value: cluster.constellation },
+                    { label: "Distance", value: cluster.distanceLabel },
+                    { label: "Diameter", value: cluster.approximateDiameterLy },
+                    ...cluster.facts,
                 ],
             })
         ),

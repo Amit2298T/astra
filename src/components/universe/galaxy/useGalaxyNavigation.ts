@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 
 import type { GalacticNavigationTarget } from "@/data/galaxy";
 import { getNebulaById } from "@/data/nebulae";
+import { getStarClusterById } from "@/data/starClusters";
 import { galaxyTravelManager } from "@/engine/navigation/GalaxyTravelManager";
 import { galacticRegistry } from "@/engine/registry/GalacticRegistry";
 
@@ -12,7 +13,8 @@ export type GalaxyNavigationMode =
     | "focus"
     | "travel"
     | "blackHole"
-    | "nebula";
+    | "nebula"
+    | "cluster";
 
 export function useGalaxyNavigation() {
     const [mode, setMode] = useState<GalaxyNavigationMode>("overview");
@@ -24,6 +26,8 @@ export function useGalaxyNavigation() {
     const [blackHoleFocusRequestId, setBlackHoleFocusRequestId] = useState(0);
     const [activeNebulaId, setActiveNebulaId] = useState<string | null>(null);
     const [nebulaFocusRequestId, setNebulaFocusRequestId] = useState(0);
+    const [activeClusterId, setActiveClusterId] = useState<string | null>(null);
+    const [clusterFocusRequestId, setClusterFocusRequestId] = useState(0);
 
     const selectTarget = useCallback(
         (target: GalacticNavigationTarget) => {
@@ -44,6 +48,14 @@ export function useGalaxyNavigation() {
         setMode("focus");
         setFocusRequestId((requestId) => requestId + 1);
     }, [mode, selectedTarget]);
+
+    const focusTarget = useCallback((target: GalacticNavigationTarget) => {
+        galaxyTravelManager.cancelTravel();
+        setSelectedTarget(target);
+        setActiveTarget(target);
+        setMode("focus");
+        setFocusRequestId((requestId) => requestId + 1);
+    }, []);
 
     const travelToSelected = useCallback(() => {
         if (!selectedTarget || mode === "travel") return;
@@ -110,11 +122,39 @@ export function useGalaxyNavigation() {
         setFocusRequestId((requestId) => requestId + 1);
     }, [mode]);
 
+    const enterCluster = useCallback(() => {
+        if (
+            mode !== "focus" ||
+            !selectedTarget ||
+            selectedTarget.type !== "starCluster" ||
+            activeTarget?.id !== selectedTarget.id ||
+            !getStarClusterById(selectedTarget.id)
+        ) {
+            return;
+        }
+        setActiveClusterId(selectedTarget.id);
+        setMode("cluster");
+        setClusterFocusRequestId((requestId) => requestId + 1);
+    }, [activeTarget, mode, selectedTarget]);
+
+    const refocusCluster = useCallback(() => {
+        if (mode !== "cluster") return;
+        setClusterFocusRequestId((requestId) => requestId + 1);
+    }, [mode]);
+
+    const exitCluster = useCallback(() => {
+        if (mode !== "cluster") return;
+        setMode("focus");
+        setActiveClusterId(null);
+        setFocusRequestId((requestId) => requestId + 1);
+    }, [mode]);
+
     const resetOverview = useCallback(() => {
         galaxyTravelManager.cancelTravel();
         setSelectedTarget(null);
         setActiveTarget(null);
         setActiveNebulaId(null);
+        setActiveClusterId(null);
         setMode("overview");
     }, []);
 
@@ -126,9 +166,12 @@ export function useGalaxyNavigation() {
         blackHoleFocusRequestId,
         activeNebulaId,
         nebulaFocusRequestId,
+        activeClusterId,
+        clusterFocusRequestId,
         selectTarget,
         clearSelection,
         focusSelected,
+        focusTarget,
         travelToSelected,
         completeArrival,
         enterBlackHole,
@@ -137,6 +180,9 @@ export function useGalaxyNavigation() {
         enterNebula,
         refocusNebula,
         exitNebula,
+        enterCluster,
+        refocusCluster,
+        exitCluster,
         resetOverview,
     };
 }

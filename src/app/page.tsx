@@ -1,11 +1,5 @@
-"use client";
-
-import { UniverseCanvas } from "@/components/universe/UniverseCanvas";
+import { LandingPage } from "@/components/home/LandingPage";
 
 export default function Home() {
-  return (
-    <main className="h-screen w-screen overflow-hidden bg-black">
-      <UniverseCanvas />
-    </main>
-  );
+    return <LandingPage />;
 }
