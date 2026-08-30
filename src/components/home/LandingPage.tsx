@@ -257,6 +257,9 @@ export function LandingPage() {
                     <Link className={styles.scaleLink} href="/scale">
                         Explore Cosmic Scale <span aria-hidden="true">→</span>
                     </Link>
+                    <Link className={styles.compareLink} href="/compare">
+                        Compare Worlds <span aria-hidden="true">→</span>
+                    </Link>
                 </div>
                 <div className={styles.scaleTrack} aria-label="Scale progression">
                     <div><span>01</span><strong>Earth</strong><small>12,742 km</small></div>
