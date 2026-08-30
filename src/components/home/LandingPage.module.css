@@ -722,7 +722,8 @@
     font-size: .72rem;
 }
 .footer p { text-align: center; }
-.footer > a:last-child { justify-self: end; color: #babcc5; text-decoration: none; }
+.footer nav { display: flex; justify-self: end; gap: 18px; }
+.footer nav a { color: #babcc5; text-decoration: none; }
 
 .srOnly {
     position: absolute;
@@ -783,7 +784,7 @@
     .finalCta { padding: 145px 16px 135px; }
     .finalCta::after { bottom: -61%; height: 76%; }
     .footer { grid-template-columns: 1fr; gap: 22px; text-align: center; }
-    .footer .wordmark, .footer > a:last-child { justify-self: center; }
+    .footer .wordmark, .footer nav { justify-self: center; }
     .footer p { margin: 0; }
 }
 

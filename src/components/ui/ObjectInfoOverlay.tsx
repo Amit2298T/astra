@@ -4,6 +4,8 @@ import type { CameraMode, SelectedObject } from "@/engine/camera/types";
 import { getSpacecraftByName } from "@/data/spacecraft";
 import { getStarByName, getExoplanetByName } from "@/data/starSystems";
 import { getDwarfPlanetByName } from "@/data/dwarfPlanets";
+import { resolveAstronomyRecord } from "@/data/astronomy";
+import { AstronomyRecordDetails } from "./AstronomyRecordDetails";
 import styles from "./ObjectInfoOverlay.module.css";
 
 interface ObjectInfoOverlayProps {
@@ -49,9 +51,12 @@ export function ObjectInfoOverlay({
         target.type === "dwarfPlanet"
             ? getDwarfPlanetByName(target.name)
             : undefined;
+    const astronomyRecord = resolveAstronomyRecord(target.id, target.name);
 
     // Subtitle categorization
-    let subtitle = "Planet • Solar System";
+    let subtitle = astronomyRecord
+        ? astronomyRecord.classification
+        : "Planet • Solar System";
     if (spacecraft) {
         subtitle = `${spacecraft.missionType} • ${spacecraft.agency}`;
     } else if (star) {
@@ -60,7 +65,7 @@ export function ObjectInfoOverlay({
         subtitle = `Exoplanet • ${exoplanet.systemName} System`;
     }
 
-    if (dwarfPlanet) {
+    if (dwarfPlanet && !astronomyRecord) {
         subtitle = `Dwarf Planet • ${dwarfPlanet.region}`;
     }
 
@@ -253,8 +258,12 @@ export function ObjectInfoOverlay({
                 </div>
             </div>
 
-            {/* Facts Card for Spacecraft, Star, or Exoplanet */}
-            {spacecraft && (
+            {astronomyRecord && (
+                <AstronomyRecordDetails record={astronomyRecord} />
+            )}
+
+            {/* Legacy fallbacks for objects not yet present in the astronomy registry. */}
+            {!astronomyRecord && spacecraft && (
                 <div
                     style={{
                         background: "rgba(255, 255, 255, 0.04)",
@@ -284,7 +293,7 @@ export function ObjectInfoOverlay({
                 </div>
             )}
 
-            {star && (
+            {!astronomyRecord && star && (
                 <div
                     style={{
                         background: "rgba(255, 255, 255, 0.04)",
@@ -312,7 +321,7 @@ export function ObjectInfoOverlay({
                 </div>
             )}
 
-            {exoplanet && (
+            {!astronomyRecord && exoplanet && (
                 <div
                     style={{
                         background: "rgba(255, 255, 255, 0.04)",
@@ -340,7 +349,7 @@ export function ObjectInfoOverlay({
                 </div>
             )}
 
-            {dwarfPlanet && (
+            {!astronomyRecord && dwarfPlanet && (
                 <div
                     style={{
                         background: "rgba(255, 255, 255, 0.04)",
@@ -381,8 +390,8 @@ export function ObjectInfoOverlay({
                 </div>
             )}
 
-            {/* Description */}
-            <div
+            {/* Description fallback */}
+            {!astronomyRecord && <div
                 style={{
                     fontSize: 12,
                     lineHeight: 1.5,
@@ -394,7 +403,7 @@ export function ObjectInfoOverlay({
                     exoplanet?.description ??
                     dwarfPlanet?.description ??
                     "Selected celestial body. Engage Focus View to orbit and inspect, or Travel To via Autopilot."}
-            </div>
+            </div>}
 
             {/* Action Buttons Grid */}
             <div

@@ -1,4 +1,6 @@
 import type { BlackHoleConfig } from "@/data/blackHoles";
+import { getAstronomyRecord } from "@/data/astronomy";
+import { AstronomyRecordDetails } from "./AstronomyRecordDetails";
 import styles from "./BlackHoleOverlay.module.css";
 
 interface BlackHoleOverlayProps {
@@ -12,6 +14,8 @@ export function BlackHoleOverlay({
     onRefocus,
     onReturn,
 }: BlackHoleOverlayProps) {
+    const astronomyRecord = getAstronomyRecord(blackHole.id);
+
     return (
         <section
             className={styles.panel}
@@ -20,10 +24,14 @@ export function BlackHoleOverlay({
             <div className={styles.eyebrow}>Black hole close-up</div>
             <h1 className={styles.title}>{blackHole.name}</h1>
             <div className={styles.classification}>
-                {blackHole.classification}
+                {astronomyRecord?.classification ?? blackHole.classification}
             </div>
 
-            <div className={styles.facts}>
+            {astronomyRecord && (
+                <AstronomyRecordDetails record={astronomyRecord} tone="warm" />
+            )}
+
+            {!astronomyRecord && <div className={styles.facts}>
                 {blackHole.facts.map((fact, index) => (
                     <div
                         className={styles.fact}
@@ -33,9 +41,11 @@ export function BlackHoleOverlay({
                         <strong>{fact.value}</strong>
                     </div>
                 ))}
-            </div>
+            </div>}
 
-            <p className={styles.description}>{blackHole.description}</p>
+            {!astronomyRecord && (
+                <p className={styles.description}>{blackHole.description}</p>
+            )}
             <div className={styles.visualizationNote}>
                 <span aria-hidden="true">◌</span>
                 Visualized accretion environment — enhanced for clarity

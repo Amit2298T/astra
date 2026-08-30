@@ -1,5 +1,7 @@
 import type { GalacticNavigationTarget } from "@/data/galaxy";
+import { getAstronomyRecord } from "@/data/astronomy";
 import type { GalaxyNavigationMode } from "../universe/galaxy/useGalaxyNavigation";
+import { AstronomyRecordDetails } from "./AstronomyRecordDetails";
 import styles from "./GalaxyNavigation.module.css";
 
 interface GalacticInfoOverlayProps {
@@ -27,6 +29,8 @@ export function GalacticInfoOverlay({
     onEnterCluster,
     onClose,
 }: GalacticInfoOverlayProps) {
+    const astronomyRecord = getAstronomyRecord(target.id);
+
     return (
         <section
             className={styles.infoPanel}
@@ -46,7 +50,14 @@ export function GalacticInfoOverlay({
                 </button>
             </div>
 
-            <div className={styles.facts}>
+            {astronomyRecord && (
+                <AstronomyRecordDetails
+                    record={astronomyRecord}
+                    tone="galactic"
+                />
+            )}
+
+            {!astronomyRecord && <div className={styles.facts}>
                 {target.facts.map((fact, index) => (
                     <div
                         className={styles.fact}
@@ -56,9 +67,11 @@ export function GalacticInfoOverlay({
                         <span className={styles.factValue}>{fact.value}</span>
                     </div>
                 ))}
-            </div>
+            </div>}
 
-            <div className={styles.description}>{target.description}</div>
+            {!astronomyRecord && (
+                <div className={styles.description}>{target.description}</div>
+            )}
 
             <div className={styles.actions}>
                 <button className={styles.actionButton} onClick={onFocus}>

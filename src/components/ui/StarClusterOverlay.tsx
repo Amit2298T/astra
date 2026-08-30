@@ -1,4 +1,6 @@
 import type { StarClusterConfig } from "@/data/starClusters";
+import { getAstronomyRecord } from "@/data/astronomy";
+import { AstronomyRecordDetails } from "./AstronomyRecordDetails";
 import styles from "./StarClusterOverlay.module.css";
 
 interface StarClusterOverlayProps {
@@ -12,6 +14,8 @@ export function StarClusterOverlay({
     onRefocus,
     onReturn,
 }: StarClusterOverlayProps) {
+    const astronomyRecord = getAstronomyRecord(cluster.id);
+
     return (
         <section
             className={styles.panel}
@@ -21,7 +25,11 @@ export function StarClusterOverlay({
             <h1 className={styles.title}>{cluster.name}</h1>
             <div className={styles.catalog}>{cluster.catalogName}</div>
 
-            <div className={styles.facts}>
+            {astronomyRecord && (
+                <AstronomyRecordDetails record={astronomyRecord} tone="cluster" />
+            )}
+
+            {!astronomyRecord && <div className={styles.facts}>
                 <div className={styles.fact}>
                     <span>Classification</span>
                     <strong>{cluster.classification}</strong>
@@ -47,9 +55,11 @@ export function StarClusterOverlay({
                         <strong>{fact.value}</strong>
                     </div>
                 ))}
-            </div>
+            </div>}
 
-            <p className={styles.description}>{cluster.description}</p>
+            {!astronomyRecord && (
+                <p className={styles.description}>{cluster.description}</p>
+            )}
             <div className={styles.visualizationNote}>
                 Visualization uses representative star populations and
                 compressed scale.

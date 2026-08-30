@@ -1,4 +1,6 @@
 import type { NebulaConfig } from "@/data/nebulae";
+import { getAstronomyRecord } from "@/data/astronomy";
+import { AstronomyRecordDetails } from "./AstronomyRecordDetails";
 import styles from "./NebulaOverlay.module.css";
 
 interface NebulaOverlayProps {
@@ -12,6 +14,8 @@ export function NebulaOverlay({
     onRefocus,
     onReturn,
 }: NebulaOverlayProps) {
+    const astronomyRecord = getAstronomyRecord(nebula.id);
+
     return (
         <section
             className={styles.panel}
@@ -21,7 +25,11 @@ export function NebulaOverlay({
             <h1 className={styles.title}>{nebula.name}</h1>
             <div className={styles.catalog}>{nebula.catalogName}</div>
 
-            <div className={styles.facts}>
+            {astronomyRecord && (
+                <AstronomyRecordDetails record={astronomyRecord} tone="nebula" />
+            )}
+
+            {!astronomyRecord && <div className={styles.facts}>
                 <div className={styles.fact}>
                     <span>Classification</span>
                     <strong>{nebula.classification}</strong>
@@ -47,9 +55,11 @@ export function NebulaOverlay({
                         <strong>{fact.value}</strong>
                     </div>
                 ))}
-            </div>
+            </div>}
 
-            <p className={styles.description}>{nebula.description}</p>
+            {!astronomyRecord && (
+                <p className={styles.description}>{nebula.description}</p>
+            )}
             <div className={styles.visualizationNote}>
                 Enhanced visualization — visible structure and colors are
                 stylized for clarity.

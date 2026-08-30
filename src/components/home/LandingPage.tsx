@@ -311,7 +311,10 @@ export function LandingPage() {
                     <span className={styles.brandMark} aria-hidden="true" /> ASTRA
                 </Link>
                 <p>An interactive 3D universe for exploration and learning.</p>
-                <Link href={explorerHref()} prefetch={false}>Enter Explorer</Link>
+                <nav aria-label="Footer navigation">
+                    <Link href="/sources">Data & Sources</Link>
+                    <Link href={explorerHref()} prefetch={false}>Enter Explorer</Link>
+                </nav>
             </footer>
         </main>
     );
