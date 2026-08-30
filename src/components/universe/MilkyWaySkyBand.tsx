@@ -137,6 +137,7 @@ const hazeVertexShader = `
 
 const hazeFragmentShader = `
     varying vec3 vDirection;
+    uniform float opacityScale;
 
     void main() {
         float longitude = atan(vDirection.z, vDirection.x);
@@ -146,7 +147,7 @@ const hazeFragmentShader = `
         float irregularity = 0.72 + 0.18 * sin(longitude * 3.1 + 0.8)
             + 0.10 * sin(longitude * 7.4 - 1.1);
         float dust = 1.0 - 0.52 * exp(-pow(abs(latitude - center) / 0.032, 2.0));
-        float alpha = band * irregularity * dust * 0.026;
+        float alpha = band * irregularity * dust * 0.026 * opacityScale;
         gl_FragColor = vec4(0.55, 0.62, 0.72, alpha);
     }
 `;
@@ -155,7 +156,11 @@ const hazeFragmentShader = `
  * Stylized fixed celestial orientation; it does not simulate observer date,
  * location, or the exact Earth-sky galactic plane.
  */
-export function MilkyWaySkyBand() {
+interface MilkyWaySkyBandProps {
+    opacityScale?: number;
+}
+
+export function MilkyWaySkyBand({ opacityScale = 1 }: MilkyWaySkyBandProps) {
     const rootRef = useRef<THREE.Group>(null);
 
     useFrame(({ camera }) => {
@@ -174,17 +179,18 @@ export function MilkyWaySkyBand() {
                     side={THREE.BackSide}
                     blending={THREE.NormalBlending}
                     toneMapped={false}
+                    uniforms={{ opacityScale: { value: opacityScale } }}
                 />
             </mesh>
             <SkyBandPoints
                 population={bandStars}
                 size={0.58}
-                opacity={0.48}
+                opacity={0.48 * opacityScale}
             />
             <SkyBandPoints
                 population={prominentBandStars}
                 size={0.92}
-                opacity={0.62}
+                opacity={0.62 * opacityScale}
             />
         </group>
     );

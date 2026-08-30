@@ -10,6 +10,7 @@ import type { SelectedObject } from "@/engine/camera/types";
 import { Star } from "./Star";
 import { Exoplanet } from "./Exoplanet";
 import { sceneRegistry } from "@/engine/registry/SceneRegistry";
+import { useSceneLayerOpacity } from "../scale/FadingSceneGroup";
 
 interface StarSystemProps {
     config: StarSystemConfig;
@@ -29,6 +30,7 @@ export function StarSystem({ config, onSelect, onFocus }: StarSystemProps) {
     const proximaBAnchorRef = useRef<THREE.Group>(null);
     const [isNear, setIsNear] = useState(false);
     const { camera } = useThree();
+    const layerOpacity = useSceneLayerOpacity();
 
     const { position, label, distanceLightYears, stars, exoplanets } = config;
 
@@ -207,6 +209,7 @@ export function StarSystem({ config, onSelect, onFocus }: StarSystemProps) {
                                 alignItems: "center",
                                 pointerEvents: "none",
                                 userSelect: "none",
+                                opacity: layerOpacity,
                             }}
                         >
                             <span

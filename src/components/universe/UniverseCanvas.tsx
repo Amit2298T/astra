@@ -31,7 +31,17 @@ import { BlackHoleCameraController } from "./galaxy/blackhole/BlackHoleCameraCon
 import { NebulaScene } from "./galaxy/nebula/NebulaScene";
 import { NebulaCameraController } from "./galaxy/nebula/NebulaCameraController";
 import { getNebulaById } from "@/data/nebulae";
+import { SOLAR_SYSTEM_GALACTIC_POSITION } from "@/data/nebulae";
 import { NebulaSkyCues } from "./NebulaSkyCues";
+import { ScaleTransitionIndicator } from "../ui/ScaleTransitionIndicator";
+import { FadingSceneGroup } from "./scale/FadingSceneGroup";
+import { ScaleTransitionController } from "./scale/ScaleTransitionController";
+import { useScaleTransition } from "./scale/useScaleTransition";
+import { SolarNeighborhoodTransitionMarker } from "./scale/SolarNeighborhoodTransitionMarker";
+import {
+    LOCAL_ORBIT_MAX_DISTANCE,
+    smoothRange,
+} from "@/engine/scale/ScaleTransition";
 
 export function UniverseCanvas() {
     const [selectedObject, setSelectedObject] = useState<SelectedObject | null>(null);
@@ -39,6 +49,7 @@ export function UniverseCanvas() {
     const [cameraMode, setCameraMode] = useState<CameraMode>("freeFlight");
     const controlsRef = useRef<OrbitControlsImpl>(null);
     const galaxyNavigation = useGalaxyNavigation();
+    const scaleTransition = useScaleTransition();
 
     const isFreeFlight = cameraMode === "freeFlight";
     const isTravel = cameraMode === "travel";
@@ -48,6 +59,44 @@ export function UniverseCanvas() {
     const isNebula =
         isGalaxy && galaxyNavigation.mode === "nebula" && activeNebula !== null;
     const isGalaxyCloseUp = isBlackHole || isNebula;
+    const isScaleLocal = scaleTransition.phase === "local";
+    const isScaleGalaxy = scaleTransition.phase === "galaxy";
+    const showLocalLayer = !isScaleGalaxy;
+    const showGalaxyExterior = !isScaleLocal && !isGalaxyCloseUp;
+    const transitionAnchorPosition = isScaleLocal
+        ? ([0, 0, 0] as const)
+        : ([
+              SOLAR_SYSTEM_GALACTIC_POSITION[0] * scaleTransition.progress,
+              SOLAR_SYSTEM_GALACTIC_POSITION[1] * scaleTransition.progress,
+              SOLAR_SYSTEM_GALACTIC_POSITION[2] * scaleTransition.progress,
+          ] as const);
+    const preTransitionLocalOpacity =
+        1 - scaleTransition.localZoomProgress * 0.42;
+    const preTransitionSkyOpacity =
+        1 - scaleTransition.localZoomProgress * 0.3;
+    const preTransitionLabelOpacity =
+        1 - smoothRange(scaleTransition.localZoomProgress, 0.12, 0.72);
+    const localLayerOpacity = isScaleLocal
+        ? preTransitionLocalOpacity
+        : (scaleTransition.phase === "transitioningOut"
+              ? preTransitionLocalOpacity
+              : 1) *
+          (1 - smoothRange(scaleTransition.progress, 0.03, 0.6));
+    const localSkyOpacity = isScaleLocal
+        ? preTransitionSkyOpacity
+        : (scaleTransition.phase === "transitioningOut"
+              ? preTransitionSkyOpacity
+              : 1) *
+          (1 - smoothRange(scaleTransition.progress, 0.36, 0.9));
+    const galaxyLayerOpacity = isScaleGalaxy
+        ? 1
+        : smoothRange(scaleTransition.progress, 0, 0.82);
+    const localLabelOpacity = isScaleLocal
+        ? preTransitionLabelOpacity
+        : (scaleTransition.phase === "transitioningOut"
+              ? preTransitionLabelOpacity
+              : 1) *
+          (1 - smoothRange(scaleTransition.progress, 0.02, 0.42));
 
     const handleSelectPlanet = useCallback(
         (name: string) => {
@@ -137,15 +186,39 @@ export function UniverseCanvas() {
         galaxyNavigation.resetOverview();
         setSelectedObject(null);
         setActiveOrbitTarget(null);
-        setCameraMode("galaxy");
-    }, [galaxyNavigation]);
+        scaleTransition.beginOut("shortcut");
+    }, [galaxyNavigation, scaleTransition]);
 
     const handleReturnToLocalSpace = useCallback(() => {
         galaxyNavigation.resetOverview();
         setSelectedObject(null);
         setActiveOrbitTarget("Sun");
+        scaleTransition.beginIn("shortcut");
+    }, [galaxyNavigation, scaleTransition]);
+
+    const handleManualGalaxyTransition = useCallback(() => {
+        galaxyNavigation.resetOverview();
+        setSelectedObject(null);
+        setActiveOrbitTarget(null);
+        scaleTransition.beginOut("manual");
+    }, [galaxyNavigation, scaleTransition]);
+
+    const handleManualLocalTransition = useCallback(() => {
+        galaxyNavigation.resetOverview();
+        setSelectedObject(null);
+        setActiveOrbitTarget("Sun");
+        scaleTransition.beginIn("manual");
+    }, [galaxyNavigation, scaleTransition]);
+
+    const handleCompleteGalaxyTransition = useCallback(() => {
+        setCameraMode("galaxy");
+        scaleTransition.finishOut();
+    }, [scaleTransition]);
+
+    const handleCompleteLocalTransition = useCallback(() => {
         setCameraMode("system");
-    }, [galaxyNavigation]);
+        scaleTransition.finishIn();
+    }, [scaleTransition]);
 
     const handleCenterOnSun = useCallback(() => {
         travelManager.cancelTravel();
@@ -173,15 +246,22 @@ export function UniverseCanvas() {
             >
                 <ambientLight intensity={0.08} />
 
-                {!isGalaxy && (
-                    <LocalUniverseLayer
-                        onSelectPlanet={handleSelectPlanet}
-                        onFocusPlanet={handleFocusPlanet}
-                        onSelectObject={handleSelectObject}
-                        onFocusObject={handleFocusObject}
-                    />
+                {showLocalLayer && (
+                    <group position={transitionAnchorPosition}>
+                        <FadingSceneGroup
+                            opacity={localLayerOpacity}
+                            labelOpacity={localLabelOpacity}
+                        >
+                            <LocalUniverseLayer
+                                onSelectPlanet={handleSelectPlanet}
+                                onFocusPlanet={handleFocusPlanet}
+                                onSelectObject={handleSelectObject}
+                                onFocusObject={handleFocusObject}
+                            />
+                        </FadingSceneGroup>
+                    </group>
                 )}
-                {isGalaxy && !isGalaxyCloseUp && (
+                {showGalaxyExterior && (
                     <MilkyWay
                         selectedTargetId={
                             galaxyNavigation.selectedTarget?.id
@@ -189,10 +269,17 @@ export function UniverseCanvas() {
                         activeTargetId={galaxyNavigation.activeTarget?.id}
                         isTraveling={galaxyNavigation.mode === "travel"}
                         onSelectTarget={galaxyNavigation.selectTarget}
+                        opacityScale={galaxyLayerOpacity}
+                        scaleProgress={scaleTransition.progress}
+                    />
+                )}
+                {scaleTransition.isTransitioning && (
+                    <SolarNeighborhoodTransitionMarker
+                        progress={scaleTransition.progress}
                     />
                 )}
 
-                {!isGalaxy && (
+                {!isGalaxy && isScaleLocal && (
                     <CameraController
                         selectedTarget={selectedObject?.name ?? null}
                         activeOrbitTarget={activeOrbitTarget}
@@ -202,7 +289,7 @@ export function UniverseCanvas() {
                         onTravelFailure={handleTravelFailure}
                     />
                 )}
-                {isGalaxy && !isGalaxyCloseUp && (
+                {isGalaxy && isScaleGalaxy && !isGalaxyCloseUp && (
                     <GalaxyCameraController
                         mode={galaxyNavigation.mode}
                         activeTarget={galaxyNavigation.activeTarget}
@@ -211,6 +298,32 @@ export function UniverseCanvas() {
                         onArrival={galaxyNavigation.completeArrival}
                     />
                 )}
+
+                <ScaleTransitionController
+                    phase={scaleTransition.phase}
+                    pace={scaleTransition.pace}
+                    controlsRef={controlsRef}
+                    canExitLocal={
+                        isScaleLocal &&
+                        (cameraMode === "system" ||
+                            (cameraMode === "focus" && activeOrbitTarget === "Sun"))
+                    }
+                    canEnterLocal={
+                        isScaleGalaxy &&
+                        isGalaxy &&
+                        galaxyNavigation.mode === "focus" &&
+                        galaxyNavigation.selectedTarget?.id === "solar-system-galactic" &&
+                        galaxyNavigation.activeTarget?.id === "solar-system-galactic"
+                    }
+                    prefersReducedMotion={scaleTransition.prefersReducedMotion}
+                    preserveCameraLookDirection={isFreeFlight}
+                    onRequestOut={handleManualGalaxyTransition}
+                    onRequestIn={handleManualLocalTransition}
+                    onProgress={scaleTransition.setProgress}
+                    onLocalZoomProgress={scaleTransition.setLocalZoomProgress}
+                    onCompleteOut={handleCompleteGalaxyTransition}
+                    onCompleteIn={handleCompleteLocalTransition}
+                />
 
                 {isBlackHole && (
                     <>
@@ -240,22 +353,33 @@ export function UniverseCanvas() {
 
                 <StarField
                     opacityScale={
-                        isGalaxyCloseUp ? 0.12 : isGalaxy ? 0.34 : 1
+                        isGalaxyCloseUp
+                            ? 0.12
+                            : 1 -
+                              smoothRange(
+                                  scaleTransition.progress,
+                                  0.08,
+                                  0.95
+                              ) *
+                                  0.66
                     }
                 />
-                {!isGalaxy && (
+                {showLocalLayer && (
                     <>
-                        <MilkyWaySkyBand />
-                        <GalacticCenterDirectionMarker />
-                        <NebulaSkyCues />
+                        <MilkyWaySkyBand opacityScale={localSkyOpacity} />
+                        <FadingSceneGroup opacity={localSkyOpacity}>
+                            <GalacticCenterDirectionMarker />
+                            <NebulaSkyCues />
+                        </FadingSceneGroup>
                     </>
                 )}
                 <OrbitControls
                     ref={controlsRef}
                     enabled={
-                        isGalaxyCloseUp ||
-                        (isGalaxy && galaxyNavigation.mode !== "travel") ||
-                        (!isFreeFlight && !isTravel && activeOrbitTarget !== null)
+                        !scaleTransition.isTransitioning &&
+                        (isGalaxyCloseUp ||
+                            (isGalaxy && galaxyNavigation.mode !== "travel") ||
+                            (!isFreeFlight && !isTravel && activeOrbitTarget !== null))
                     }
                     enablePan={false}
                     minDistance={
@@ -263,7 +387,7 @@ export function UniverseCanvas() {
                             ? 8.5
                             : isNebula && activeNebula
                               ? activeNebula.closeUpMinDistance
-                              : isGalaxy
+                              : isScaleGalaxy
                                 ? 360
                                 : 0
                     }
@@ -272,26 +396,26 @@ export function UniverseCanvas() {
                             ? 90
                             : isNebula && activeNebula
                               ? activeNebula.closeUpMaxDistance
-                              : isGalaxy
+                              : isScaleGalaxy
                                 ? 8500
-                                : Infinity
+                                : LOCAL_ORBIT_MAX_DISTANCE
                     }
                 />
             </Canvas>
 
-            {!isFreeFlight && !isTravel && !isGalaxy && (
+            {!isFreeFlight && !isTravel && !isGalaxy && isScaleLocal && (
                 <MainHUD
                     onEnterFreeRoam={handleEnterFreeRoam}
                     onEnterGalaxyView={handleEnterGalaxyView}
                 />
             )}
-            {isFreeFlight && (
+            {isFreeFlight && isScaleLocal && (
                 <FreeFlightHUD
                     onSolarSystemOverview={handleSolarSystemOverview}
                     onEnterGalaxyView={handleEnterGalaxyView}
                 />
             )}
-            {isGalaxy && !isGalaxyCloseUp && (
+            {isGalaxy && isScaleGalaxy && !isGalaxyCloseUp && (
                 <GalaxyHUD
                     onReturnToLocalSpace={handleReturnToLocalSpace}
                     returnLabel={
@@ -302,9 +426,11 @@ export function UniverseCanvas() {
                     }
                 />
             )}
-            {isTravel && <TravelHUD onCancelTravel={handleEnterFreeRoam} />}
+            {isTravel && isScaleLocal && (
+                <TravelHUD onCancelTravel={handleEnterFreeRoam} />
+            )}
 
-            {selectedObject && !isTravel && !isGalaxy && (
+            {selectedObject && !isTravel && !isGalaxy && isScaleLocal && (
                 <ObjectInfoOverlay
                     target={selectedObject}
                     mode={cameraMode}
@@ -320,6 +446,7 @@ export function UniverseCanvas() {
             )}
 
             {isGalaxy &&
+                isScaleGalaxy &&
                 !isBlackHole &&
                 !isNebula &&
                 galaxyNavigation.selectedTarget &&
@@ -340,7 +467,7 @@ export function UniverseCanvas() {
                     />
                 )}
 
-            {isGalaxy && galaxyNavigation.mode === "travel" && (
+            {isGalaxy && isScaleGalaxy && galaxyNavigation.mode === "travel" && (
                 <GalaxyTravelHUD onCancel={galaxyNavigation.resetOverview} />
             )}
 
@@ -358,7 +485,7 @@ export function UniverseCanvas() {
                     onReturn={galaxyNavigation.exitNebula}
                 />
             )}
-            {isGalaxy && (
+            {isGalaxy && isScaleGalaxy && (
                 <BlackHoleTransitionVeil
                     phase={
                         isNebula
@@ -367,6 +494,12 @@ export function UniverseCanvas() {
                               ? "closeUp"
                               : "galaxy"
                     }
+                />
+            )}
+            {scaleTransition.isTransitioning && (
+                <ScaleTransitionIndicator
+                    phase={scaleTransition.phase}
+                    progress={scaleTransition.progress}
                 />
             )}
         </>

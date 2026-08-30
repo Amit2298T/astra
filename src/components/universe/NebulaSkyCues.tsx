@@ -10,6 +10,7 @@ import {
     LOCAL_MILKY_WAY_ORIENTATION,
     LOCAL_SKY_RADIUS,
 } from "./MilkyWaySkyBand";
+import { useSceneLayerOpacity } from "./scale/FadingSceneGroup";
 
 const GALACTIC_CENTER_SKY_LONGITUDE = -0.95;
 const SKY_CUE_RADIUS = LOCAL_SKY_RADIUS - 15;
@@ -64,6 +65,7 @@ const cuePlacements: readonly CuePlacement[] = nebulae
 
 export function NebulaSkyCues() {
     const rootRef = useRef<THREE.Group>(null);
+    const layerOpacity = useSceneLayerOpacity();
 
     useFrame(({ camera }) => {
         rootRef.current?.position.copy(camera.position);
@@ -86,7 +88,11 @@ export function NebulaSkyCues() {
                                             config.palette.marker
                                         ),
                                     },
-                                    uOpacity: { value: isOrion ? 0.16 : 0.09 },
+                                    uOpacity: {
+                                        value:
+                                            (isOrion ? 0.16 : 0.09) *
+                                            layerOpacity,
+                                    },
                                 }}
                                 transparent
                                 depthWrite={false}
@@ -113,6 +119,7 @@ export function NebulaSkyCues() {
                                         textShadow: "0 1px 7px #000",
                                         textTransform: "uppercase",
                                         userSelect: "none",
+                                        opacity: layerOpacity,
                                     }}
                                 >
                                     Orion Nebula · guide

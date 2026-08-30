@@ -5,6 +5,8 @@ import { milkyWayConfig } from "@/data/galaxy";
 import { createSeededRandom, randomNormal } from "@/engine/math/seededRandom";
 import { GalacticMarker } from "./GalacticMarker";
 import type { GalacticNavigationTarget } from "@/data/galaxy";
+import { SOLAR_SYSTEM_GALACTIC_POSITION } from "@/data/nebulae";
+import { smoothRange } from "@/engine/scale/ScaleTransition";
 
 interface ParticlePopulation {
     positions: Float32Array;
@@ -14,6 +16,35 @@ interface ParticlePopulation {
 const BULGE_COUNT = 10000;
 const DISK_COUNT = 37000;
 const DUST_COUNT = 8000;
+const POINT_TEXTURE_SIZE = 32;
+
+function createCircularPointTexture(): THREE.DataTexture {
+    const data = new Uint8Array(POINT_TEXTURE_SIZE * POINT_TEXTURE_SIZE * 4);
+    const center = (POINT_TEXTURE_SIZE - 1) / 2;
+
+    for (let y = 0; y < POINT_TEXTURE_SIZE; y++) {
+        for (let x = 0; x < POINT_TEXTURE_SIZE; x++) {
+            const distance = Math.hypot(x - center, y - center) / center;
+            const alpha = THREE.MathUtils.smoothstep(1 - distance, 0, 0.34);
+            const offset = (y * POINT_TEXTURE_SIZE + x) * 4;
+            data[offset] = 255;
+            data[offset + 1] = Math.round(alpha * 255);
+            data[offset + 2] = 255;
+            data[offset + 3] = Math.round(alpha * 255);
+        }
+    }
+
+    const texture = new THREE.DataTexture(
+        data,
+        POINT_TEXTURE_SIZE,
+        POINT_TEXTURE_SIZE,
+        THREE.RGBAFormat
+    );
+    texture.needsUpdate = true;
+    return texture;
+}
+
+const circularPointTexture = createCircularPointTexture();
 
 function setParticle(
     positions: Float32Array,
@@ -174,6 +205,8 @@ function GalaxyPoints({
                 vertexColors
                 transparent
                 opacity={opacity}
+                alphaMap={circularPointTexture}
+                alphaTest={0.025}
                 depthWrite={false}
                 blending={blending}
                 toneMapped={false}
@@ -187,6 +220,8 @@ interface MilkyWayProps {
     activeTargetId?: string;
     isTraveling?: boolean;
     onSelectTarget?: (target: GalacticNavigationTarget) => void;
+    opacityScale?: number;
+    scaleProgress?: number;
 }
 
 export function MilkyWay({
@@ -194,29 +229,40 @@ export function MilkyWay({
     activeTargetId,
     isTraveling = false,
     onSelectTarget,
+    opacityScale = 1,
+    scaleProgress = 1,
 }: MilkyWayProps) {
     const populations = useMemo(
         () => ({ bulge: createBulge(), disk: createDisk(), dust: createDust() }),
         []
     );
 
+    const markerOpacity = opacityScale * smoothRange(scaleProgress, 0.76, 0.96);
+    const anchorOffset = 1 - scaleProgress;
+
     return (
-        <group>
+        <group
+            position={[
+                -SOLAR_SYSTEM_GALACTIC_POSITION[0] * anchorOffset,
+                -SOLAR_SYSTEM_GALACTIC_POSITION[1] * anchorOffset,
+                -SOLAR_SYSTEM_GALACTIC_POSITION[2] * anchorOffset,
+            ]}
+        >
             <group rotation={[0, -0.14, 0]}>
                 <GalaxyPoints
                     population={populations.bulge}
-                    size={6.4}
-                    opacity={0.5}
+                    size={4.8}
+                    opacity={0.5 * opacityScale}
                 />
                 <GalaxyPoints
                     population={populations.disk}
-                    size={5.2}
-                    opacity={0.86}
+                    size={4.1}
+                    opacity={0.86 * opacityScale}
                 />
                 <GalaxyPoints
                     population={populations.dust}
-                    size={10.5}
-                    opacity={0.3}
+                    size={6.8}
+                    opacity={0.3 * opacityScale}
                     blending={THREE.NormalBlending}
                 />
             </group>
@@ -229,6 +275,7 @@ export function MilkyWay({
                         isTraveling && activeTargetId === location.id
                     }
                     onSelect={onSelectTarget}
+                    opacityScale={markerOpacity}
                 />
             ))}
         </group>

@@ -9,6 +9,7 @@ import {
     LOCAL_MILKY_WAY_ORIENTATION,
     LOCAL_SKY_RADIUS,
 } from "./MilkyWaySkyBand";
+import { useSceneLayerOpacity } from "./scale/FadingSceneGroup";
 
 const MARKER_LONGITUDE = -0.95;
 const MARKER_LATITUDE =
@@ -32,6 +33,7 @@ const markerFacingQuaternion = new THREE.Quaternion().setFromUnitVectors(
 /** Informational fixed-sky direction, not an exact date/location sky solution. */
 export function GalacticCenterDirectionMarker() {
     const rootRef = useRef<THREE.Group>(null);
+    const layerOpacity = useSceneLayerOpacity();
 
     useFrame(({ camera }) => {
         rootRef.current?.position.copy(camera.position);
@@ -82,6 +84,7 @@ export function GalacticCenterDirectionMarker() {
                             textShadow: "0 1px 7px rgba(0, 0, 0, 0.95)",
                             textTransform: "uppercase",
                             userSelect: "none",
+                            opacity: layerOpacity,
                         }}
                     >
                         <div>Galactic Center</div>

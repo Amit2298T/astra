@@ -9,6 +9,7 @@ interface GalacticMarkerProps {
     selected?: boolean;
     emphasized?: boolean;
     onSelect?: (location: GalacticNavigationTarget) => void;
+    opacityScale?: number;
 }
 
 export function GalacticMarker({
@@ -16,6 +17,7 @@ export function GalacticMarker({
     selected = false,
     emphasized = false,
     onSelect,
+    opacityScale = 1,
 }: GalacticMarkerProps) {
     if (!location.markerVisible) return null;
 
@@ -53,7 +55,7 @@ export function GalacticMarker({
                     <meshBasicMaterial
                         color={markerColor}
                         transparent
-                        opacity={selected || emphasized ? 0.12 : 0.065}
+                        opacity={(selected || emphasized ? 0.12 : 0.065) * opacityScale}
                         depthWrite={false}
                         blending={THREE.AdditiveBlending}
                         toneMapped={false}
@@ -72,7 +74,7 @@ export function GalacticMarker({
                 <meshBasicMaterial
                     color={markerColor}
                     transparent
-                    opacity={emphasized ? 0.82 : selected ? 0.72 : 0.58}
+                    opacity={(emphasized ? 0.82 : selected ? 0.72 : 0.58) * opacityScale}
                     depthWrite={false}
                     toneMapped={false}
                 />
@@ -82,7 +84,7 @@ export function GalacticMarker({
                 <meshBasicMaterial
                     color={markerColor}
                     transparent
-                    opacity={emphasized ? 1 : selected ? 0.96 : 0.88}
+                    opacity={(emphasized ? 1 : selected ? 0.96 : 0.88) * opacityScale}
                     toneMapped={false}
                 />
             </mesh>
@@ -93,7 +95,7 @@ export function GalacticMarker({
                 <meshBasicMaterial
                     color={markerColor}
                     transparent
-                    opacity={emphasized ? 0.9 : selected ? 0.78 : 0.62}
+                    opacity={(emphasized ? 0.9 : selected ? 0.78 : 0.62) * opacityScale}
                     side={2}
                     depthWrite={false}
                     toneMapped={false}
@@ -112,6 +114,7 @@ export function GalacticMarker({
                     title={location.description}
                     style={{
                         pointerEvents: "none",
+                        opacity: opacityScale,
                         whiteSpace: "nowrap",
                         color: isCenter
                             ? "#fde7bd"
