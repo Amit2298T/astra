@@ -93,6 +93,10 @@ export default function SourcesPage() {
                             <p>Core facts are reviewed against authoritative sources and shipped with the application.</p>
                         </div>
                         <div>
+                            <h3>Local AI Space Guide</h3>
+                            <p>Guide answers use ASTRA’s local datasets and deterministic comparison or mission calculations. Milestone 5G uses no external language model.</p>
+                        </div>
+                        <div>
                             <h3>Appropriate precision</h3>
                             <p>Rounded educational values are preferred where measurements vary or false precision would mislead.</p>
                         </div>

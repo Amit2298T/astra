@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import type { AstronomyRecord } from "@/data/astronomy";
 import styles from "./AstronomyRecordDetails.module.css";
 
@@ -15,6 +17,10 @@ export function AstronomyRecordDetails({
     return (
         <div className={styles.details} data-tone={tone}>
             <p className={styles.summary}>{record.summary}</p>
+
+            <Link className={styles.guideLink} href={`/guide?object=${record.id}`}>
+                Ask AI Guide <span aria-hidden="true">→</span>
+            </Link>
 
             <div className={styles.groups}>
                 {record.factGroups.map((group) => (

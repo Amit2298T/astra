@@ -85,6 +85,9 @@ export function MissionControlDashboard({
                         <div><dt>Data snapshot</dt><dd>{mission.snapshot.displayDate}</dd></div>
                     </dl>
                     <div className={styles.heroActions}>
+                        <Link href="/guide?object=voyager-1">
+                            Ask about Voyager 1 <span aria-hidden="true">→</span>
+                        </Link>
                         <Link href={explorerHref("voyager-1")} prefetch={false}>
                             View Voyager 1 in Explorer <span aria-hidden="true">↗</span>
                         </Link>

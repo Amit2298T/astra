@@ -140,6 +140,8 @@
 .sources li { display: grid; margin-bottom: 10px; gap: 3px; }
 .sources a { color: #b9c8e8; font-size: .63rem; text-decoration: none; }
 .sources small { color: #5d6677; font-size: .53rem; }
+.guideLink { display: inline-flex; margin-top: 18px; align-items: center; gap: 10px; color: #a9c6e9; font-size: .65rem; text-decoration: none; }
+.guideLink:hover { color: #fff; }
 
 @media (max-width: 1120px) {
     .workspace { grid-template-columns: 220px minmax(0, 1fr); }

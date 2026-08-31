@@ -33,6 +33,20 @@
     line-height: 1.55;
 }
 
+.guideLink {
+    display: inline-flex;
+    width: max-content;
+    align-items: center;
+    gap: 10px;
+    color: var(--astronomy-accent);
+    font-size: 10px;
+    font-weight: 650;
+    letter-spacing: .04em;
+    text-decoration: none;
+}
+
+.guideLink:hover { color: #ffffff; }
+
 .groups {
     display: grid;
     gap: 8px;

@@ -408,6 +408,9 @@ function InfoPanel({ constellationId, starId, onSelectStar }: { constellationId:
                     <summary>Sources</summary>
                     <ul>{selectedStar.sources.map((source) => <li key={source.url}><a href={source.url} target="_blank" rel="noopener noreferrer">{source.label} ↗</a><small>{source.organization}</small></li>)}</ul>
                 </details>
+                <Link className={styles.guideLink} href={`/guide?star=${selectedStar.id}`}>
+                    Ask AI Guide <span aria-hidden="true">→</span>
+                </Link>
             </aside>
         );
     }
@@ -424,6 +427,9 @@ function InfoPanel({ constellationId, starId, onSelectStar }: { constellationId:
                 {constellation.mythologySummary && <div className={styles.mythology}><span>Sky lore</span><p>{constellation.mythologySummary}</p></div>}
                 <div className={styles.majorStars}><h3>Major stars</h3><ul>{stars.map((star) => <li key={star.id}><button type="button" onClick={() => onSelectStar(star)}><span>{star.name}</span><small>mag {star.magnitude.toFixed(2)}</small></button></li>)}</ul></div>
                 <p className={styles.seasonNote}>* Broad Northern Hemisphere viewing guidance.</p>
+                <Link className={styles.guideLink} href={`/guide?constellation=${constellation.id}`}>
+                    Ask AI Guide <span aria-hidden="true">→</span>
+                </Link>
             </aside>
         );
     }

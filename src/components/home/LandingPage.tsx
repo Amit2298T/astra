@@ -93,6 +93,7 @@ export function LandingPage() {
                     <a href="#destinations">Destinations</a>
                     <a href="#experience">Experience</a>
                     <a href="#mission">Mission</a>
+                    <Link href="/guide">AI Space Guide</Link>
                     <Link href="/star-map">Star Map</Link>
                     <Link href="/mission-control">Mission Control</Link>
                     <Link className={styles.navCta} href={explorerHref()} prefetch={false}>
@@ -106,6 +107,7 @@ export function LandingPage() {
                         <a href="#destinations">Destinations</a>
                         <a href="#experience">Experience</a>
                         <a href="#mission">Mission</a>
+                        <Link href="/guide">AI Space Guide</Link>
                         <Link href="/star-map">Star Map</Link>
                         <Link href="/mission-control">Mission Control</Link>
                         <Link href={explorerHref()} prefetch={false}>Open Explorer</Link>
