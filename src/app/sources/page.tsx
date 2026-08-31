@@ -41,6 +41,16 @@ const primarySources = [
         role: "Nebula and star-cluster observations",
         url: "https://science.nasa.gov/mission/hubble/",
     },
+    {
+        name: "International Astronomical Union",
+        role: "Official constellation names, abbreviations, and sky boundaries",
+        url: "https://www.iau.org/public/themes/constellations/",
+    },
+    {
+        name: "CDS / VizieR and SIMBAD",
+        role: "J2000 star coordinates, visual magnitudes, spectral classes, and stellar references",
+        url: "https://cds.unistra.fr/",
+    },
 ] as const;
 
 export default function SourcesPage() {
@@ -52,6 +62,7 @@ export default function SourcesPage() {
                 </Link>
                 <nav aria-label="Sources page navigation">
                     <Link href="/">Home</Link>
+                    <Link href="/star-map">Star Map</Link>
                     <Link href="/explore" prefetch={false}>Explorer</Link>
                 </nav>
             </header>

@@ -1,0 +1,181 @@
+.page {
+    --paper: #f1efe8;
+    --muted: #959baa;
+    --line: rgba(196, 210, 235, .15);
+    min-height: 100svh;
+    overflow-x: hidden;
+    color: var(--paper);
+    background:
+        radial-gradient(circle at 65% -10%, rgba(54, 83, 145, .2), transparent 38rem),
+        #05070c;
+}
+
+.header {
+    display: grid;
+    width: min(100% - 44px, 1560px);
+    min-height: 88px;
+    margin: 0 auto;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 24px;
+    border-bottom: 1px solid var(--line);
+}
+
+.wordmark { display: inline-flex; width: max-content; align-items: center; gap: 11px; color: var(--paper); font-size: .78rem; font-weight: 760; letter-spacing: .32em; text-decoration: none; }
+.wordmark span { width: 13px; height: 13px; border: 1px solid rgba(255,255,255,.8); border-radius: 50%; box-shadow: inset 4px -2px 0 rgba(111,151,255,.7); }
+.titleBlock { text-align: center; }
+.titleBlock p { margin: 0 0 4px; color: #777f91; font-family: var(--font-geist-mono), monospace; font-size: .58rem; letter-spacing: .15em; text-transform: uppercase; }
+.titleBlock h1 { margin: 0; font-size: 1.05rem; font-weight: 540; letter-spacing: .06em; }
+.header nav { display: flex; justify-self: end; gap: 22px; }
+.header nav a { color: #aab0bd; font-size: .7rem; letter-spacing: .07em; text-decoration: none; }
+.header nav a:hover { color: #fff; }
+
+.workspace {
+    display: grid;
+    width: min(100% - 44px, 1720px);
+    min-height: calc(100svh - 88px);
+    margin: 0 auto;
+    grid-template-columns: minmax(210px, 255px) minmax(540px, 1fr) minmax(250px, 310px);
+    gap: clamp(18px, 2vw, 36px);
+}
+
+.selector, .infoPanel { padding: 26px 0; }
+.selector { display: flex; min-height: 0; flex-direction: column; border-right: 1px solid var(--line); padding-right: clamp(16px, 1.5vw, 26px); }
+.selectorHeading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.selectorHeading > div { display: flex; align-items: baseline; gap: 8px; }
+.selectorHeading span, .panelIndex { color: #6c7891; font-family: var(--font-geist-mono), monospace; font-size: .58rem; letter-spacing: .12em; text-transform: uppercase; }
+.selectorHeading h2 { margin: 0; font-size: .84rem; font-weight: 590; }
+.selectorHeading button { padding: 0; color: #aab6d1; border: 0; background: none; cursor: pointer; font: inherit; font-size: .65rem; text-decoration: underline; text-underline-offset: 4px; }
+
+.searchLabel { display: grid; margin-top: 25px; gap: 7px; color: #747c8d; font-size: .61rem; letter-spacing: .1em; text-transform: uppercase; }
+.searchLabel input, .filterGrid select { width: 100%; min-width: 0; color: #e7e8eb; border: 1px solid var(--line); border-radius: 6px; outline: 0; background: rgba(13,17,27,.78); font: inherit; }
+.searchLabel input { height: 40px; padding: 0 11px; font-size: .72rem; letter-spacing: 0; text-transform: none; }
+.searchLabel input:focus, .filterGrid select:focus { border-color: rgba(151,177,237,.58); }
+.filterGrid { display: grid; margin-top: 13px; grid-template-columns: 1fr 1fr; gap: 9px; }
+.filterGrid label { display: grid; gap: 6px; color: #737b8b; font-size: .59rem; letter-spacing: .08em; text-transform: uppercase; }
+.filterGrid label small { color: #525b6f; font-size: .48rem; }
+.filterGrid select { height: 36px; padding: 0 7px; color-scheme: dark; font-size: .66rem; letter-spacing: 0; text-transform: none; }
+
+.constellationList { display: grid; margin-top: 20px; overflow: auto; gap: 3px; scrollbar-width: thin; scrollbar-color: #30394d transparent; }
+.constellationList button { display: flex; width: 100%; min-height: 52px; padding: 8px 10px; align-items: center; justify-content: space-between; color: #c8cad1; border: 1px solid transparent; border-radius: 6px; background: transparent; cursor: pointer; text-align: left; }
+.constellationList button:hover { background: rgba(255,255,255,.035); }
+.constellationList button > span { display: grid; gap: 5px; font-size: .75rem; }
+.constellationList button small { color: #60697a; font-size: .55rem; }
+.constellationList button b { color: #5f697c; font-family: var(--font-geist-mono), monospace; font-size: .58rem; font-weight: 500; }
+.constellationList .activeConstellation { color: #fff; border-color: rgba(134,165,230,.23); background: rgba(65,88,139,.16); }
+.constellationList .activeConstellation b { color: #a9c0ee; }
+.empty { color: #697183; font-size: .7rem; }
+
+.mapColumn { display: flex; min-width: 0; padding: 22px 0 26px; flex-direction: column; }
+.mapToolbar { display: flex; min-height: 34px; margin-bottom: 9px; align-items: center; justify-content: space-between; gap: 16px; }
+.mapToolbar > span { color: #7d8598; font-family: var(--font-geist-mono), monospace; font-size: .58rem; letter-spacing: .1em; text-transform: uppercase; }
+.mapToolbar > div { display: flex; gap: 13px; }
+.toggle { display: flex; align-items: center; gap: 6px; color: #858c9d; cursor: pointer; font-size: .62rem; }
+.toggle input { position: absolute; opacity: 0; pointer-events: none; }
+.toggle > span { position: relative; width: 23px; height: 12px; border: 1px solid #394155; border-radius: 99px; background: #111622; }
+.toggle > span::after { position: absolute; top: 2px; left: 2px; width: 6px; height: 6px; content: ""; border-radius: 50%; background: #60697d; transition: transform 180ms ease, background 180ms ease; }
+.toggle input:checked + span::after { background: #c8d8ff; transform: translateX(11px); }
+.toggle input:focus-visible + span { outline: 2px solid #c4b5fd; outline-offset: 3px; }
+
+.mapFrame { position: relative; min-height: 0; border: 1px solid var(--line); border-radius: 11px; background: #070a12; box-shadow: 0 26px 80px rgba(0,0,0,.28); }
+.mapFrame svg { display: block; width: 100%; height: auto; aspect-ratio: 2 / 1; }
+.grid path, .grid ellipse { fill: none; stroke: rgba(147, 168, 208, .1); stroke-width: 1; }
+.grid text { fill: rgba(157, 174, 205, .38); font-family: var(--font-geist-mono), monospace; font-size: 9px; letter-spacing: .08em; }
+.grid .equator { stroke: rgba(132, 174, 223, .26); stroke-dasharray: 5 8; }
+.celestialLayer { transform-box: fill-box; transform-origin: 0 0; transition: transform 720ms cubic-bezier(.2,.8,.2,1); }
+.constellation { opacity: .68; transition: opacity 300ms ease; }
+.constellation line { stroke: rgba(128, 156, 210, .48); stroke-width: 1; stroke-linecap: round; }
+.constellationLabel { fill: rgba(178,190,216,.64); font-family: var(--font-geist-mono), monospace; font-size: 9px; letter-spacing: .13em; text-anchor: middle; }
+.constellation.selected { opacity: 1; }
+.constellation.selected line { stroke: rgba(182, 207, 255, .95); stroke-width: 1.5; filter: drop-shadow(0 0 4px rgba(108,151,238,.45)); }
+.constellation.selected .constellationLabel { fill: rgba(210, 220, 242, .78); font-size: 6px; letter-spacing: .18em; }
+.dimmed { opacity: .12 !important; }
+.hidden { opacity: 0 !important; pointer-events: none; }
+
+.star { cursor: pointer; opacity: .92; outline: none; transition: opacity 300ms ease; }
+.star circle:not(.starGlow) { stroke: rgba(255,255,255,.7); stroke-width: .5; transition: r 180ms ease; }
+.starGlow { opacity: .14; filter: url(#star-glow); }
+.star text { fill: rgba(227,233,247,.88); font-family: var(--font-geist-sans), sans-serif; font-size: 5.2px; paint-order: stroke; stroke: rgba(5,8,14,.9); stroke-width: 1.4px; }
+.star .majorStarLabel { fill: rgba(235, 240, 251, .92); font-size: 5.2px; }
+.star .secondaryStarLabel { fill: rgba(190, 199, 217, .78); font-size: 4.6px; }
+.star .selectedStarLabel { fill: #fff; font-size: 5.8px; font-weight: 620; stroke-width: 1.8px; }
+.star:hover circle:not(.starGlow), .star:focus-visible circle:not(.starGlow) { stroke: #fff; stroke-width: 1.5; }
+.star:focus-visible circle:not(.starGlow) { filter: drop-shadow(0 0 4px #b9ccff); }
+.activeStar circle:not(.starGlow) { stroke: #fff; stroke-width: 2; }
+.activeStar .starGlow { opacity: .45; }
+
+.orientation { position: absolute; top: 14px; right: 14px; display: flex; align-items: center; gap: 5px; color: rgba(171,187,218,.52); font-family: var(--font-geist-mono), monospace; font-size: .46rem; }
+.orientation i { display: block; width: 32px; height: 1px; background: rgba(150,173,217,.3); }
+.mapNote { position: absolute; right: 14px; bottom: 10px; margin: 0; color: rgba(150,163,190,.45); font-family: var(--font-geist-mono), monospace; font-size: .48rem; }
+.distanceNote { display: grid; margin-top: 14px; padding: 15px 17px; grid-template-columns: 145px 1fr; gap: 18px; border: 1px solid var(--line); border-radius: 7px; background: rgba(12,16,25,.72); }
+.distanceNote strong { color: #b6c8ed; font-size: .66rem; letter-spacing: .08em; text-transform: uppercase; }
+.distanceNote p { margin: 0; color: #828998; font-size: .67rem; line-height: 1.55; }
+
+.infoPanel { min-width: 0; border-left: 1px solid var(--line); padding-left: clamp(16px, 1.5vw, 27px); }
+.panelIndex { margin: 0 0 22px; }
+.panelTitle { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.panelTitle span { color: #7f8da9; font-family: var(--font-geist-mono), monospace; font-size: .62rem; letter-spacing: .13em; text-transform: uppercase; }
+.panelTitle h2, .infoPanel > h2 { margin: 7px 0 0; font-size: clamp(1.6rem, 2vw, 2.4rem); font-weight: 470; letter-spacing: -.04em; line-height: 1; }
+.panelTitle i { width: 9px; height: 9px; margin-top: 8px; border-radius: 50%; box-shadow: 0 0 15px currentColor; }
+.badges { display: flex; margin-top: 18px; flex-wrap: wrap; gap: 6px; }
+.badges span { padding: 6px 8px; color: #98a5bd; border: 1px solid var(--line); border-radius: 99px; font-size: .55rem; letter-spacing: .06em; text-transform: uppercase; }
+.description { margin: 24px 0 0; color: #b2b6c1; font-size: .78rem; line-height: 1.68; }
+.secondary { padding-top: 14px; color: #767e8d; font-size: .68rem; line-height: 1.55; border-top: 1px solid var(--line); }
+.facts { display: grid; margin: 24px 0 0; }
+.facts div { display: flex; padding: 10px 0; align-items: baseline; justify-content: space-between; gap: 12px; border-top: 1px solid var(--line); }
+.facts dt { color: #70798b; font-size: .62rem; }
+.facts dd { margin: 0; color: #ced2dc; font-family: var(--font-geist-mono), monospace; font-size: .61rem; text-align: right; }
+.mythology { margin-top: 22px; padding: 14px; border-left: 1px solid #5c709a; background: rgba(32,44,69,.18); }
+.mythology span { color: #8294b9; font-size: .53rem; letter-spacing: .14em; text-transform: uppercase; }
+.mythology p { margin: 7px 0 0; color: #9299a9; font-size: .66rem; line-height: 1.55; }
+.majorStars { margin-top: 24px; }
+.majorStars h3 { color: #7e8799; font-size: .58rem; font-weight: 560; letter-spacing: .12em; text-transform: uppercase; }
+.majorStars ul, .sources ul { padding: 0; margin: 10px 0 0; list-style: none; }
+.majorStars button { display: flex; width: 100%; padding: 9px 0; align-items: center; justify-content: space-between; color: #c5c9d2; border: 0; border-top: 1px solid var(--line); background: none; cursor: pointer; font: inherit; font-size: .68rem; }
+.majorStars button:hover span { color: #fff; }
+.majorStars button small { color: #657086; font-family: var(--font-geist-mono), monospace; font-size: .55rem; }
+.seasonNote { color: #555e70; font-size: .55rem; }
+.sources { margin-top: 24px; border-top: 1px solid var(--line); }
+.sources summary { padding: 12px 0; color: #8793aa; cursor: pointer; font-size: .63rem; }
+.sources li { display: grid; margin-bottom: 10px; gap: 3px; }
+.sources a { color: #b9c8e8; font-size: .63rem; text-decoration: none; }
+.sources small { color: #5d6677; font-size: .53rem; }
+
+@media (max-width: 1120px) {
+    .workspace { grid-template-columns: 220px minmax(0, 1fr); }
+    .infoPanel { grid-column: 1 / -1; padding: 25px 0 42px; border-top: 1px solid var(--line); border-left: 0; }
+    .infoPanel { columns: 2; column-gap: 42px; }
+    .infoPanel > * { break-inside: avoid; }
+}
+
+@media (max-width: 760px) {
+    .header { width: min(100% - 28px, 1560px); min-height: 72px; grid-template-columns: 1fr auto; }
+    .titleBlock { display: none; }
+    .header nav { gap: 14px; }
+    .workspace { width: min(100% - 28px, 1720px); grid-template-columns: 1fr; }
+    .selector { padding: 19px 0 14px; border-right: 0; }
+    .constellationList { display: flex; margin-top: 14px; overflow-x: auto; gap: 6px; }
+    .constellationList button { min-width: 156px; }
+    .filterGrid { grid-template-columns: 1fr 1fr; }
+    .mapColumn { padding-top: 4px; }
+    .mapToolbar { align-items: flex-start; flex-direction: column; }
+    .mapToolbar > div { width: 100%; justify-content: space-between; }
+    .mapFrame { width: calc(100% + 28px); margin-left: -14px; border-right: 0; border-left: 0; border-radius: 0; overflow: hidden; }
+    .mapFrame svg { aspect-ratio: 2 / 1; }
+    .constellationLabel { display: none; }
+    .star .secondaryStarLabel { display: none; }
+    .star .selectedStarLabel { display: block; }
+    .distanceNote { grid-template-columns: 1fr; gap: 6px; }
+    .infoPanel { grid-column: auto; padding: 26px 0 50px; columns: auto; }
+}
+
+@media (max-width: 430px) {
+    .header nav a:first-child { display: none; }
+    .filterGrid { gap: 7px; }
+    .star text { font-size: 7px; }
+    .orientation { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .celestialLayer, .star, .constellation, .toggle > span::after { transition: none; }
+}
