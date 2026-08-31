@@ -3,11 +3,12 @@ export interface PlanetConfig {
     name: string;
     radius: number;
     orbitRadius: number;
-    orbitSpeed: number;
-    rotationSpeed: number;
+    orbitalPeriodDays: number;
+    /** Positive sidereal period magnitude; axialTiltDeg encodes spin direction. */
+    rotationPeriodHours: number;
     texturePath: string;
     initialAngle: number;
-    axialTilt?: number;
+    axialTiltDeg: number;
     hasRings?: boolean;
     ringTexturePath?: string;
     ringInnerRadius?: number;
@@ -19,8 +20,10 @@ export interface MoonConfig {
     name: string;
     radius: number;
     orbitRadius: number;
-    orbitSpeed: number;
-    rotationSpeed: number;
+    averageDistanceKm: number;
+    orbitalPeriodDays: number;
+    rotationPeriodDays: number;
+    inclinationDeg: number;
     texturePath: string;
     initialAngle: number;
 }
@@ -42,61 +45,61 @@ export const solarSystemData: SolarSystemData = {
             name: "Mercury",
             radius: 0.18,
             orbitRadius: 3,
-            orbitSpeed: 0.45,
-            rotationSpeed: 0.02,
+            orbitalPeriodDays: 87.969,
+            rotationPeriodHours: 1407.5,
             texturePath: "/textures/mercury/mercury.jpg",
             initialAngle: Math.PI * 0.8,
-            axialTilt: 0.03,
+            axialTiltDeg: 0.034,
         },
         {
             name: "Venus",
             radius: 0.34,
             orbitRadius: 4.5,
-            orbitSpeed: 0.35,
-            rotationSpeed: -0.01, // retrograde rotation
+            orbitalPeriodDays: 224.701,
+            rotationPeriodHours: 5832.5,
             texturePath: "/textures/venus/venus.jpg",
             initialAngle: Math.PI * 1.5,
-            axialTilt: 177.4, // nearly upside-down
+            axialTiltDeg: 177.36,
         },
         {
             name: "Earth",
             radius: 0.35,
             orbitRadius: 6,
-            orbitSpeed: 0.25,
-            rotationSpeed: 0.5,
+            orbitalPeriodDays: 365.256,
+            rotationPeriodHours: 23.9345,
             texturePath: "/textures/earth/earth_daymap.jpg",
             initialAngle: 0,
-            axialTilt: 23.4,
+            axialTiltDeg: 23.44,
         },
         {
             name: "Mars",
             radius: 0.28,
             orbitRadius: 8,
-            orbitSpeed: 0.18,
-            rotationSpeed: 0.48,
+            orbitalPeriodDays: 686.98,
+            rotationPeriodHours: 24.6229,
             texturePath: "/textures/mars/mars.jpg",
             initialAngle: Math.PI * 0.6,
-            axialTilt: 25.2,
+            axialTiltDeg: 25.19,
         },
         {
             name: "Jupiter",
             radius: 0.75,
             orbitRadius: 12,
-            orbitSpeed: 0.1,
-            rotationSpeed: 1.2,
+            orbitalPeriodDays: 4332.59,
+            rotationPeriodHours: 9.925,
             texturePath: "/textures/jupiter/jupiter.jpg",
             initialAngle: Math.PI * 1.2,
-            axialTilt: 3.1,
+            axialTiltDeg: 3.13,
         },
         {
             name: "Saturn",
             radius: 0.65,
             orbitRadius: 16,
-            orbitSpeed: 0.07,
-            rotationSpeed: 1.0,
+            orbitalPeriodDays: 10759.22,
+            rotationPeriodHours: 10.7,
             texturePath: "/textures/saturn/saturn.jpg",
             initialAngle: Math.PI * 0.3,
-            axialTilt: 26.7,
+            axialTiltDeg: 26.73,
             hasRings: true,
             ringTexturePath: "/textures/saturn/saturn_ring.png",
             ringInnerRadius: 0.85,
@@ -106,21 +109,21 @@ export const solarSystemData: SolarSystemData = {
             name: "Uranus",
             radius: 0.48,
             orbitRadius: 21,
-            orbitSpeed: 0.045,
-            rotationSpeed: -0.6, // retrograde
+            orbitalPeriodDays: 30688.5,
+            rotationPeriodHours: 17.24,
             texturePath: "/textures/uranus/uranus.jpg",
             initialAngle: Math.PI * 0.9,
-            axialTilt: 97.8, // extreme sideways tilt
+            axialTiltDeg: 97.77,
         },
         {
             name: "Neptune",
             radius: 0.46,
             orbitRadius: 26,
-            orbitSpeed: 0.03,
-            rotationSpeed: 0.55,
+            orbitalPeriodDays: 60182,
+            rotationPeriodHours: 16.11,
             texturePath: "/textures/neptune/neptune.jpg",
             initialAngle: Math.PI * 1.7,
-            axialTilt: 28.3,
+            axialTiltDeg: 28.32,
         },
     ],
     moons: {
@@ -129,8 +132,10 @@ export const solarSystemData: SolarSystemData = {
                 name: "Moon",
                 radius: 0.1,
                 orbitRadius: 0.9,
-                orbitSpeed: 1.5,
-                rotationSpeed: 0.1,
+                averageDistanceKm: 384400,
+                orbitalPeriodDays: 27.3217,
+                rotationPeriodDays: 27.3217,
+                inclinationDeg: 5.145,
                 texturePath: "/textures/moon/moon.jpg",
                 initialAngle: 0,
             },

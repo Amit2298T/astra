@@ -41,7 +41,7 @@ export function DwarfPlanet({
         };
     }, [config.name]);
 
-    useFrame(({ clock }) => {
+    useFrame(({ clock }, delta) => {
         const orbitingGroup = orbitingGroupRef.current;
         const mesh = meshRef.current;
         if (!orbitingGroup || !mesh) return;
@@ -51,7 +51,8 @@ export function DwarfPlanet({
         orbitingGroup.position.x =
             (Math.cos(angle) - config.eccentricity) * config.orbitRadius;
         orbitingGroup.position.z = Math.sin(angle) * semiMinorAxis;
-        mesh.rotation.y += config.rotationSpeed * 0.01;
+        // Preserve the established visual rate while making it frame independent.
+        mesh.rotation.y += config.rotationSpeed * delta * 0.6;
     });
 
     const handlePointerOver = useCallback((event: ThreeEvent<PointerEvent>) => {

@@ -10,6 +10,12 @@ import { solarSystemData } from "@/data/solarSystem";
 import { SaturnRings } from "./SaturnRings";
 import { sceneRegistry } from "@/engine/registry/SceneRegistry";
 import { DistanceFadedLabel } from "./DistanceFadedLabel";
+import {
+    advanceAngle,
+    getOrbitalAngularVelocity,
+    getRotationAngularVelocity,
+    getTidallyLockedRotationY,
+} from "@/engine/astronomy/OrbitalMotion";
 
 // ─── Moon sub-component (orbits its parent group, not the Sun) ───────────
 
@@ -19,27 +25,37 @@ interface MoonProps {
 
 function Moon({ config }: MoonProps) {
     const ref = useRef<THREE.Mesh>(null);
+    const orbitAngleRef = useRef(config.initialAngle);
+    const orbitalAngularVelocity = getOrbitalAngularVelocity(
+        config.orbitalPeriodDays
+    );
 
     const [moonMap] = useTexture([config.texturePath]);
 
-    useFrame(({ clock }) => {
+    useFrame((_, delta) => {
         if (!ref.current) return;
-        const t = clock.getElapsedTime();
-        const angle = config.initialAngle + t * config.orbitSpeed;
+        const angle = advanceAngle(
+            orbitAngleRef.current,
+            orbitalAngularVelocity,
+            delta
+        );
+        orbitAngleRef.current = angle;
         ref.current.position.x = Math.cos(angle) * config.orbitRadius;
         ref.current.position.z = Math.sin(angle) * config.orbitRadius;
-        ref.current.rotation.y += config.rotationSpeed * 0.01;
+        ref.current.rotation.y = getTidallyLockedRotationY(angle);
     });
 
     return (
-        <mesh ref={ref}>
-            <sphereGeometry args={[config.radius, 32, 32]} />
-            <meshStandardMaterial
-                map={moonMap}
-                metalness={0.05}
-                roughness={0.85}
-            />
-        </mesh>
+        <group rotation-x={THREE.MathUtils.degToRad(config.inclinationDeg)}>
+            <mesh ref={ref}>
+                <sphereGeometry args={[config.radius, 32, 32]} />
+                <meshStandardMaterial
+                    map={moonMap}
+                    metalness={0.05}
+                    roughness={0.85}
+                />
+            </mesh>
+        </group>
     );
 }
 
@@ -54,17 +70,18 @@ interface PlanetProps {
 export function Planet({ config, onSelect, onFocus }: PlanetProps) {
     const groupRef = useRef<THREE.Group>(null);
     const meshRef = useRef<THREE.Mesh>(null);
+    const orbitAngleRef = useRef(config.initialAngle);
+    const rotationAngleRef = useRef(0);
     const [hovered, setHovered] = useState(false);
 
     const {
         name,
         radius,
         orbitRadius,
-        orbitSpeed,
-        rotationSpeed,
+        orbitalPeriodDays,
+        rotationPeriodHours,
         texturePath,
-        initialAngle,
-        axialTilt,
+        axialTiltDeg,
         hasRings,
         ringTexturePath,
         ringInnerRadius,
@@ -72,6 +89,10 @@ export function Planet({ config, onSelect, onFocus }: PlanetProps) {
     } = config;
 
     const [map] = useTexture([texturePath]);
+    const orbitalAngularVelocity =
+        getOrbitalAngularVelocity(orbitalPeriodDays);
+    const rotationAngularVelocity =
+        getRotationAngularVelocity(rotationPeriodHours);
 
     // Register planet object in sceneRegistry for camera targeting
     useEffect(() => {
@@ -88,20 +109,34 @@ export function Planet({ config, onSelect, onFocus }: PlanetProps) {
     const moons = solarSystemData.moons[name] ?? [];
 
     // Orbital + axial rotation in a single useFrame
-    useFrame(({ clock }) => {
+    useFrame((_, delta) => {
         if (!groupRef.current || !meshRef.current) return;
-        const t = clock.getElapsedTime();
-        const angle = initialAngle + t * orbitSpeed;
+        const orbitAngle = advanceAngle(
+            orbitAngleRef.current,
+            orbitalAngularVelocity,
+            delta
+        );
+        orbitAngleRef.current = orbitAngle;
 
         // Orbit around the Sun
-        groupRef.current.position.x = Math.cos(angle) * orbitRadius;
-        groupRef.current.position.z = Math.sin(angle) * orbitRadius;
+        groupRef.current.position.x = Math.cos(orbitAngle) * orbitRadius;
+        groupRef.current.position.z = Math.sin(orbitAngle) * orbitRadius;
 
         // Axial self-rotation
-        meshRef.current.rotation.y += rotationSpeed * 0.01;
+        rotationAngleRef.current = advanceAngle(
+            rotationAngleRef.current,
+            rotationAngularVelocity,
+            delta
+        );
+        meshRef.current.rotation.y = rotationAngleRef.current;
     });
 
-    const tiltRad = axialTilt ? THREE.MathUtils.degToRad(axialTilt) : 0;
+    const tiltRad = THREE.MathUtils.degToRad(axialTiltDeg);
+    // Earth uses a Z tilt so its local-Y longitude spin is presented side-on
+    // from ASTRA's established focus approach. Other planet orientations stay
+    // unchanged, including Saturn's equatorial ring group.
+    const tiltRotation: [number, number, number] =
+        name === "Earth" ? [0, 0, tiltRad] : [tiltRad, 0, 0];
 
     const handlePointerOver = useCallback((e: ThreeEvent<PointerEvent>) => {
         e.stopPropagation();
@@ -136,7 +171,7 @@ export function Planet({ config, onSelect, onFocus }: PlanetProps) {
     return (
         <group ref={groupRef}>
             {/* Tilt wrapper */}
-            <group rotation={[tiltRad, 0, 0]}>
+            <group rotation={tiltRotation}>
                 <mesh
                     ref={meshRef}
                     scale={scale}
