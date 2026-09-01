@@ -13,6 +13,7 @@ export type CameraMode =
 
 export type ObjectType =
     | "planet"
+    | "moon"
     | "spacecraft"
     | "star"
     | "blackHole"

@@ -147,3 +147,9 @@ export const solarSystemData: SolarSystemData = {
 export function getPlanetByName(name: string): PlanetConfig | undefined {
     return solarSystemData.planets.find((p) => p.name === name);
 }
+
+export function getMoonByName(name: string): MoonConfig | undefined {
+    return Object.values(solarSystemData.moons)
+        .flat()
+        .find((moon) => moon.name.toLowerCase() === name.toLowerCase());
+}

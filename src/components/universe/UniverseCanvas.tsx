@@ -66,6 +66,15 @@ import {
     type PerformanceSignals,
     type PerformanceTier,
 } from "@/engine/performance/PerformanceTier";
+import {
+    isSurfaceModeActive,
+    SPACE_MODE_STATE,
+    type SurfaceModeState,
+} from "@/engine/surface/SurfaceDestination";
+import { MOON_SURFACE_PROFILES } from "@/engine/surface/SurfaceTerrain";
+import { MoonSurfaceScene } from "./surface/MoonSurfaceScene";
+import { SurfaceCameraController } from "./surface/SurfaceCameraController";
+import { SurfaceHUD } from "./surface/SurfaceHUD";
 
 const SagittariusAStar = dynamic(
     () =>
@@ -113,9 +122,12 @@ export function UniverseCanvas({ initialTarget = null }: UniverseCanvasProps) {
         useState<StarSystemEntryId | null>(null);
     const [performanceTier, setPerformanceTier] =
         useState<PerformanceTier>("medium");
+    const [surfaceState, setSurfaceState] =
+        useState<SurfaceModeState>(SPACE_MODE_STATE);
     const galaxyNavigation = useGalaxyNavigation();
     const scaleTransition = useScaleTransition();
     const performanceProfile = PERFORMANCE_PROFILES[performanceTier];
+    const moonSurfaceProfile = MOON_SURFACE_PROFILES[performanceTier];
 
     useEffect(() => {
         const coarsePointer = window.matchMedia("(pointer: coarse)");
@@ -155,6 +167,7 @@ export function UniverseCanvas({ initialTarget = null }: UniverseCanvasProps) {
     const isCluster =
         isGalaxy && galaxyNavigation.mode === "cluster" && activeCluster !== null;
     const isGalaxyCloseUp = isBlackHole || isNebula || isCluster;
+    const isSurfaceMode = isSurfaceModeActive(surfaceState);
     const isScaleLocal = scaleTransition.phase === "local";
     const isScaleGalaxy = scaleTransition.phase === "galaxy";
     const showLocalLayer = !isScaleGalaxy;
@@ -203,6 +216,22 @@ export function UniverseCanvas({ initialTarget = null }: UniverseCanvasProps) {
               ? preTransitionLabelOpacity
               : 1) *
           (1 - smoothRange(scaleTransition.progress, 0.02, 0.42));
+    const spaceSurfaceOpacity =
+        surfaceState.phase === "space"
+            ? 1
+            : surfaceState.phase === "landing"
+              ? 1 - smoothRange(surfaceState.progress, 0.05, 0.8)
+              : surfaceState.phase === "returning"
+                ? smoothRange(surfaceState.progress, 0.15, 0.9)
+                : 0;
+    const moonSurfaceOpacity =
+        surfaceState.phase === "surface"
+            ? 1
+            : surfaceState.phase === "landing"
+              ? smoothRange(surfaceState.progress, 0.18, 0.88)
+              : surfaceState.phase === "returning"
+                ? 1 - smoothRange(surfaceState.progress, 0.1, 0.82)
+                : 0;
 
     const handleSelectPlanet = useCallback(
         (name: string) => {
@@ -263,6 +292,45 @@ export function UniverseCanvas({ initialTarget = null }: UniverseCanvasProps) {
         setActiveOrbitTarget(null);
         setCameraMode("travel");
     }, [selectedObject]);
+
+    const handleLandOnMoon = useCallback(() => {
+        if (selectedObject?.type !== "moon") return;
+        travelManager.cancelTravel();
+        setActiveOrbitTarget("Moon");
+        setCameraMode("focus");
+        setSurfaceState({
+            destination: "moon",
+            phase: "landing",
+            progress: 0,
+        });
+    }, [selectedObject]);
+
+    const handleSurfaceProgress = useCallback((progress: number) => {
+        setSurfaceState((current) => ({ ...current, progress }));
+    }, []);
+
+    const handleLandingComplete = useCallback(() => {
+        setSurfaceState({
+            destination: "moon",
+            phase: "surface",
+            progress: 1,
+        });
+    }, []);
+
+    const handleReturnToOrbit = useCallback(() => {
+        setSurfaceState({
+            destination: "moon",
+            phase: "returning",
+            progress: 0,
+        });
+    }, []);
+
+    const handleReturnComplete = useCallback(() => {
+        setSurfaceState(SPACE_MODE_STATE);
+        setSelectedObject({ id: "moon", name: "Moon", type: "moon" });
+        setActiveOrbitTarget("Moon");
+        setCameraMode("focus");
+    }, []);
 
     const handleArrival = useCallback((destinationName: string) => {
         setActiveOrbitTarget(destinationName);
@@ -426,14 +494,23 @@ export function UniverseCanvas({ initialTarget = null }: UniverseCanvasProps) {
     }, [activeStarSystemId, handleCenterOnSun]);
 
     const handlePointerMissed = useCallback(() => {
-        if (isGalaxyCloseUp) {
+        if (isSurfaceMode) {
+            return;
+        } else if (isGalaxyCloseUp) {
             return;
         } else if (isGalaxy) {
             galaxyNavigation.clearSelection();
         } else if (!isTravel && selectedObject) {
             setSelectedObject(null);
         }
-    }, [galaxyNavigation, isGalaxyCloseUp, isGalaxy, isTravel, selectedObject]);
+    }, [
+        galaxyNavigation,
+        isGalaxyCloseUp,
+        isGalaxy,
+        isSurfaceMode,
+        isTravel,
+        selectedObject,
+    ]);
 
     useEffect(() => {
         if (hasHandledInitialTargetRef.current || !initialTarget) return;
@@ -506,6 +583,7 @@ export function UniverseCanvas({ initialTarget = null }: UniverseCanvasProps) {
             <Canvas
                 camera={{ position: [0, 20, 40], fov: 50, far: 12000 }}
                 dpr={[1, performanceProfile.maxDpr]}
+                shadows={isSurfaceMode && moonSurfaceProfile.shadowsEnabled}
                 gl={{
                     antialias: performanceTier !== "low",
                     toneMapping: 3,
@@ -513,13 +591,13 @@ export function UniverseCanvas({ initialTarget = null }: UniverseCanvasProps) {
                 }}
                 onPointerMissed={handlePointerMissed}
             >
-                <ambientLight intensity={0.08} />
+                <ambientLight intensity={isSurfaceMode ? 0.02 : 0.08} />
 
                 {showLocalLayer && (
                     <group position={transitionAnchorPosition}>
                         <FadingSceneGroup
-                            opacity={localLayerOpacity}
-                            labelOpacity={localLabelOpacity}
+                            opacity={localLayerOpacity * spaceSurfaceOpacity}
+                            labelOpacity={localLabelOpacity * spaceSurfaceOpacity}
                         >
                             <LocalUniverseLayer
                                 activeStarSystemId={renderedStarSystemId}
@@ -548,6 +626,12 @@ export function UniverseCanvas({ initialTarget = null }: UniverseCanvasProps) {
                         performanceTier={performanceTier}
                     />
                 )}
+                {isSurfaceMode && (
+                    <MoonSurfaceScene
+                        tier={performanceTier}
+                        opacity={moonSurfaceOpacity}
+                    />
+                )}
                 {scaleTransition.isTransitioning && (
                     <SolarNeighborhoodTransitionMarker
                         progress={scaleTransition.progress}
@@ -555,7 +639,7 @@ export function UniverseCanvas({ initialTarget = null }: UniverseCanvasProps) {
                     />
                 )}
 
-                {!isGalaxy && isScaleLocal && (
+                {!isSurfaceMode && !isGalaxy && isScaleLocal && (
                     <CameraController
                         selectedTarget={selectedObject?.name ?? null}
                         activeOrbitTarget={activeOrbitTarget}
@@ -575,32 +659,56 @@ export function UniverseCanvas({ initialTarget = null }: UniverseCanvasProps) {
                     />
                 )}
 
-                <ScaleTransitionController
-                    phase={scaleTransition.phase}
-                    pace={scaleTransition.pace}
-                    controlsRef={controlsRef}
-                    canExitLocal={
-                        isScaleLocal &&
-                        (cameraMode === "system" ||
-                            (cameraMode === "focus" && activeOrbitTarget === "Sun"))
-                    }
-                    canEnterLocal={
-                        isScaleGalaxy &&
-                        isGalaxy &&
-                        galaxyNavigation.mode === "focus" &&
-                        (galaxyNavigation.selectedTarget?.id === "solar-system-galactic" || Boolean(galaxyNavigation.selectedTarget?.starSystemId)) &&
-                        galaxyNavigation.activeTarget?.id === galaxyNavigation.selectedTarget?.id
-                    }
-                    prefersReducedMotion={scaleTransition.prefersReducedMotion}
-                    preserveCameraLookDirection={isFreeFlight}
-                    onRequestOut={handleManualGalaxyTransition}
-                    onRequestIn={handleManualLocalTransition}
-                    onProgress={scaleTransition.setProgress}
-                    onLocalZoomProgress={scaleTransition.setLocalZoomProgress}
-                    onCompleteOut={handleCompleteGalaxyTransition}
-                    onCompleteIn={handleCompleteLocalTransition}
-                    localGalacticAnchor={localGalacticAnchor}
-                />
+                {!isSurfaceMode && (
+                    <ScaleTransitionController
+                        phase={scaleTransition.phase}
+                        pace={scaleTransition.pace}
+                        controlsRef={controlsRef}
+                        canExitLocal={
+                            isScaleLocal &&
+                            (cameraMode === "system" ||
+                                (cameraMode === "focus" &&
+                                    activeOrbitTarget === "Sun"))
+                        }
+                        canEnterLocal={
+                            isScaleGalaxy &&
+                            isGalaxy &&
+                            galaxyNavigation.mode === "focus" &&
+                            (galaxyNavigation.selectedTarget?.id ===
+                                "solar-system-galactic" ||
+                                Boolean(
+                                    galaxyNavigation.selectedTarget
+                                        ?.starSystemId
+                                )) &&
+                            galaxyNavigation.activeTarget?.id ===
+                                galaxyNavigation.selectedTarget?.id
+                        }
+                        prefersReducedMotion={
+                            scaleTransition.prefersReducedMotion
+                        }
+                        preserveCameraLookDirection={isFreeFlight}
+                        onRequestOut={handleManualGalaxyTransition}
+                        onRequestIn={handleManualLocalTransition}
+                        onProgress={scaleTransition.setProgress}
+                        onLocalZoomProgress={
+                            scaleTransition.setLocalZoomProgress
+                        }
+                        onCompleteOut={handleCompleteGalaxyTransition}
+                        onCompleteIn={handleCompleteLocalTransition}
+                        localGalacticAnchor={localGalacticAnchor}
+                    />
+                )}
+
+                {isSurfaceMode && (
+                    <SurfaceCameraController
+                        phase={surfaceState.phase}
+                        prefersReducedMotion={scaleTransition.prefersReducedMotion}
+                        controlsRef={controlsRef}
+                        onProgress={handleSurfaceProgress}
+                        onLandingComplete={handleLandingComplete}
+                        onReturnComplete={handleReturnComplete}
+                    />
+                )}
 
                 {isBlackHole && (
                     <>
@@ -650,7 +758,8 @@ export function UniverseCanvas({ initialTarget = null }: UniverseCanvasProps) {
                 <StarField
                     performanceTier={performanceTier}
                     opacityScale={
-                        isGalaxyCloseUp
+                        spaceSurfaceOpacity *
+                        (isGalaxyCloseUp
                             ? 0.12
                             : 1 -
                               smoothRange(
@@ -658,16 +767,18 @@ export function UniverseCanvas({ initialTarget = null }: UniverseCanvasProps) {
                                   0.08,
                                   0.95
                               ) *
-                                  0.66
+                                  0.66)
                     }
                 />
                 {showLocalLayer && (
                     <>
                         <MilkyWaySkyBand
-                            opacityScale={localSkyOpacity}
+                            opacityScale={localSkyOpacity * spaceSurfaceOpacity}
                             performanceTier={performanceTier}
                         />
-                        <FadingSceneGroup opacity={localSkyOpacity}>
+                        <FadingSceneGroup
+                            opacity={localSkyOpacity * spaceSurfaceOpacity}
+                        >
                             <GalacticCenterDirectionMarker />
                             <NebulaSkyCues />
                             <StarClusterSkyCues />
@@ -677,6 +788,7 @@ export function UniverseCanvas({ initialTarget = null }: UniverseCanvasProps) {
                 <OrbitControls
                     ref={controlsRef}
                     enabled={
+                        !isSurfaceMode &&
                         !scaleTransition.isTransitioning &&
                         (isGalaxyCloseUp ||
                             (isGalaxy && galaxyNavigation.mode !== "travel") ||
@@ -708,13 +820,17 @@ export function UniverseCanvas({ initialTarget = null }: UniverseCanvasProps) {
                 />
             </Canvas>
 
-            {!isFreeFlight && !isTravel && !isGalaxy && isScaleLocal && (
-                <MainHUD
-                    onEnterFreeRoam={handleEnterFreeRoam}
-                    onEnterGalaxyView={handleEnterGalaxyView}
-                />
-            )}
-            {isFreeFlight && isScaleLocal && (
+            {!isSurfaceMode &&
+                !isFreeFlight &&
+                !isTravel &&
+                !isGalaxy &&
+                isScaleLocal && (
+                    <MainHUD
+                        onEnterFreeRoam={handleEnterFreeRoam}
+                        onEnterGalaxyView={handleEnterGalaxyView}
+                    />
+                )}
+            {!isSurfaceMode && isFreeFlight && isScaleLocal && (
                 <FreeFlightHUD
                     onSystemOverview={handleSystemOverview}
                     systemOverviewLabel={
@@ -725,7 +841,7 @@ export function UniverseCanvas({ initialTarget = null }: UniverseCanvasProps) {
                     onEnterGalaxyView={handleEnterGalaxyView}
                 />
             )}
-            {isGalaxy && isScaleGalaxy && !isGalaxyCloseUp && (
+            {!isSurfaceMode && isGalaxy && isScaleGalaxy && !isGalaxyCloseUp && (
                 <GalaxyHUD
                     onReturnToLocalSpace={handleReturnToLocalSpace}
                     onShowNeighborhood={galaxyNavigation.enterNeighborhood}
@@ -739,28 +855,41 @@ export function UniverseCanvas({ initialTarget = null }: UniverseCanvasProps) {
                     }
                 />
             )}
-            {isTravel && isScaleLocal && (
+            {!isSurfaceMode && isTravel && isScaleLocal && (
                 <TravelHUD onCancelTravel={handleEnterFreeRoam} />
             )}
 
-            {selectedObject && !isTravel && !isGalaxy && isScaleLocal && (
-                <ObjectInfoOverlay
-                    target={selectedObject}
-                    mode={cameraMode}
-                    onFocus={handleFocusActive}
-                    onFollow={handleFollow}
-                    onStopFollow={handleStopFollow}
-                    onTravel={handleStartTravel}
-                    onFreeRoam={handleEnterFreeRoam}
-                    onSystemOverview={handleSystemOverview}
-                    onCenterOnSystem={handleCenterOnSystem}
-                    systemCenterName={systemCenterName}
-                    systemOverviewLabel={
-                        activeStarSystemId
-                            ? "System Overview"
-                            : "Solar System Overview"
-                    }
-                    onClose={() => setSelectedObject(null)}
+            {selectedObject &&
+                !isSurfaceMode &&
+                !isTravel &&
+                !isGalaxy &&
+                isScaleLocal && (
+                    <ObjectInfoOverlay
+                        target={selectedObject}
+                        mode={cameraMode}
+                        onFocus={handleFocusActive}
+                        onFollow={handleFollow}
+                        onStopFollow={handleStopFollow}
+                        onTravel={handleStartTravel}
+                        onLandOnMoon={handleLandOnMoon}
+                        onFreeRoam={handleEnterFreeRoam}
+                        onSystemOverview={handleSystemOverview}
+                        onCenterOnSystem={handleCenterOnSystem}
+                        systemCenterName={systemCenterName}
+                        systemOverviewLabel={
+                            activeStarSystemId
+                                ? "System Overview"
+                                : "Solar System Overview"
+                        }
+                        onClose={() => setSelectedObject(null)}
+                    />
+                )}
+
+            {isSurfaceMode && (
+                <SurfaceHUD
+                    phase={surfaceState.phase}
+                    progress={surfaceState.progress}
+                    onReturnToOrbit={handleReturnToOrbit}
                 />
             )}
 

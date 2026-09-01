@@ -83,6 +83,8 @@ export function LocalUniverseLayer({
                             config={planet}
                             onSelect={onSelectPlanet}
                             onFocus={onFocusPlanet}
+                            onSelectMoon={onSelectObject}
+                            onFocusMoon={onFocusObject}
                         />
                     </group>
                 ))}

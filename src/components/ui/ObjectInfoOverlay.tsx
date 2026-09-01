@@ -16,6 +16,7 @@ interface ObjectInfoOverlayProps {
     onFollow: () => void;
     onStopFollow: () => void;
     onTravel?: () => void;
+    onLandOnMoon?: () => void;
     onFreeRoam?: () => void;
     onSystemOverview?: () => void;
     onCenterOnSystem?: () => void;
@@ -31,6 +32,7 @@ export function ObjectInfoOverlay({
     onFollow,
     onStopFollow,
     onTravel,
+    onLandOnMoon,
     onFreeRoam,
     onSystemOverview,
     onCenterOnSystem,
@@ -438,6 +440,28 @@ export function ObjectInfoOverlay({
                     marginTop: 2,
                 }}
             >
+                {target.type === "moon" && onLandOnMoon && (
+                    <button
+                        onClick={onLandOnMoon}
+                        style={{
+                            gridColumn: "1 / -1",
+                            background:
+                                "linear-gradient(135deg, rgba(203, 213, 225, 0.2), rgba(100, 116, 139, 0.24))",
+                            border: "1px solid rgba(226, 232, 240, 0.42)",
+                            borderRadius: 8,
+                            color: "#f1f5f9",
+                            padding: "10px 12px",
+                            fontSize: 12,
+                            cursor: "pointer",
+                            letterSpacing: "0.06em",
+                            fontWeight: 700,
+                            textTransform: "uppercase",
+                        }}
+                    >
+                        Land on Moon
+                    </button>
+                )}
+
                 {/* 1. Travel To Autopilot Action */}
                 {onTravel && (
                     <button
