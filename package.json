@@ -1,6 +1,7 @@
 {
   "name": "astra",
   "version": "0.1.0",
+  "description": "An interactive 3D universe explorer built with Next.js, React Three Fiber, and scientific astronomy data.",
   "private": true,
   "type": "module",
   "engines": {
