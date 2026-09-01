@@ -101,6 +101,7 @@
 .composer { position: sticky; bottom: 0; z-index: 2; padding: 15px 0 4px; background: linear-gradient(to bottom, transparent, #05090b 20%); }
 .composer > label { display: block; margin-bottom: 7px; color: #73878b; font-size: .58rem; letter-spacing: .08em; text-transform: uppercase; }
 .composer > div { display: grid; grid-template-columns: minmax(0,1fr) auto; border: 1px solid rgba(150,199,205,.24); border-radius: 10px; background: rgba(9,17,20,.96); box-shadow: 0 20px 55px rgba(0,0,0,.28); }
+.composer > div:focus-within { border-color: rgba(184,223,225,.72); box-shadow: 0 0 0 2px rgba(184,223,225,.16), 0 20px 55px rgba(0,0,0,.28); }
 .composer textarea { min-height: 66px; max-height: 150px; padding: 14px 15px; resize: vertical; color: #e2e8e7; border: 0; outline: 0; background: transparent; font: inherit; font-size: .76rem; line-height: 1.5; }
 .composer textarea::placeholder { color: #526366; }
 .composer button { min-width: 88px; margin: 8px; color: #071012; border: 0; border-radius: 7px; background: #b8dfe1; cursor: pointer; font: inherit; font-size: .66rem; font-weight: 680; }

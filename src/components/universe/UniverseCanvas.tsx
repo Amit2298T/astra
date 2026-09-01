@@ -22,15 +22,12 @@ import { MainHUD } from "../ui/MainHUD";
 import { ObjectInfoOverlay } from "../ui/ObjectInfoOverlay";
 import { TravelHUD } from "../ui/TravelHUD";
 import { CameraController } from "./CameraController";
-import { MILKY_WAY_PARTICLE_COUNT, MilkyWay } from "./galaxy/MilkyWay";
+import { MilkyWay } from "./galaxy/MilkyWay";
 import { GalaxyCameraController } from "./galaxy/GalaxyCameraController";
 import { useGalaxyNavigation } from "./galaxy/useGalaxyNavigation";
 import { LocalUniverseLayer } from "./LocalUniverseLayer";
-import { LOCAL_STAR_FIELD_POINT_COUNTS, StarField } from "./StarField";
-import {
-    MILKY_WAY_SKY_BAND_POINT_COUNT,
-    MilkyWaySkyBand,
-} from "./MilkyWaySkyBand";
+import { StarField } from "./StarField";
+import { MilkyWaySkyBand } from "./MilkyWaySkyBand";
 import { GalacticCenterDirectionMarker } from "./GalacticCenterDirectionMarker";
 import { sagittariusAStar } from "@/data/blackHoles";
 import { BlackHoleCameraController } from "./galaxy/blackhole/BlackHoleCameraController";
@@ -66,7 +63,6 @@ import {
 import {
     PERFORMANCE_PROFILES,
     resolvePerformanceTier,
-    scaledCount,
     type PerformanceSignals,
     type PerformanceTier,
 } from "@/engine/performance/PerformanceTier";
@@ -207,57 +203,6 @@ export function UniverseCanvas({ initialTarget = null }: UniverseCanvasProps) {
               ? preTransitionLabelOpacity
               : 1) *
           (1 - smoothRange(scaleTransition.progress, 0.02, 0.42));
-
-    useEffect(() => {
-        if (process.env.NODE_ENV !== "development" || !isScaleLocal) return;
-        console.debug("[LocalSky]", {
-            mode: cameraMode,
-            activeStarSystemId,
-            pendingLocalDestination,
-            scaleTransitionState: scaleTransition.phase,
-            performanceTier,
-            maxDpr: performanceProfile.maxDpr,
-            starFieldMounted: true,
-            distant: scaledCount(
-                LOCAL_STAR_FIELD_POINT_COUNTS.distant,
-                performanceProfile.starFieldScale
-            ),
-            medium: scaledCount(
-                LOCAL_STAR_FIELD_POINT_COUNTS.medium,
-                performanceProfile.starFieldScale
-            ),
-            prominent: scaledCount(
-                LOCAL_STAR_FIELD_POINT_COUNTS.prominent,
-                performanceProfile.starFieldScale
-            ),
-            backgroundStarOpacity: 1,
-            milkyWayBandMounted: true,
-            milkyWayBandPoints: scaledCount(
-                MILKY_WAY_SKY_BAND_POINT_COUNT,
-                performanceProfile.skyBandScale
-            ),
-            galaxyPoints: scaledCount(
-                MILKY_WAY_PARTICLE_COUNT,
-                performanceProfile.galaxyScale
-            ),
-            galacticCenterCueMounted: true,
-            nebulaSkyCuesMounted: true,
-            starClusterSkyCuesMounted: true,
-            alphaCentauriSystemMounted: activeStarSystemId === null,
-            localLayerOpacity,
-            localSkyOpacity,
-        });
-    }, [
-        activeStarSystemId,
-        cameraMode,
-        isScaleLocal,
-        localLayerOpacity,
-        localSkyOpacity,
-        pendingLocalDestination,
-        performanceProfile,
-        performanceTier,
-        scaleTransition.phase,
-    ]);
 
     const handleSelectPlanet = useCallback(
         (name: string) => {

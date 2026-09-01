@@ -44,7 +44,7 @@ const primarySources = [
     {
         name: "International Astronomical Union",
         role: "Official constellation names, abbreviations, and sky boundaries",
-        url: "https://www.iau.org/public/themes/constellations/",
+        url: "https://iauarchive.eso.org/public/themes/constellations/",
     },
     {
         name: "CDS / VizieR and SIMBAD",

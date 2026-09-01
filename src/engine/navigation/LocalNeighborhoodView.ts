@@ -33,9 +33,11 @@ export function calculateLocalNeighborhoodBounds(
             maximum[axis] = Math.max(maximum[axis], value);
         });
     }
-    const center = minimum.map(
-        (value, axis) => (value + maximum[axis]) / 2
-    ) as unknown as ScenePosition;
+    const center: ScenePosition = [
+        (minimum[0] + maximum[0]) / 2,
+        (minimum[1] + maximum[1]) / 2,
+        (minimum[2] + maximum[2]) / 2,
+    ];
     const radius = Math.max(
         ...localTargets.map((target) =>
             Math.hypot(

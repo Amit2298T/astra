@@ -18,7 +18,7 @@ export const starMapSources = {
     iauConstellations: {
         label: "The Constellations",
         organization: "International Astronomical Union",
-        url: "https://www.iau.org/public/themes/constellations/",
+        url: "https://iauarchive.eso.org/public/themes/constellations/",
         accessedAt: ACCESSED_AT,
     },
 } as const satisfies Record<string, SourceReference>;

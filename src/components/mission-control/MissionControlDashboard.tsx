@@ -225,8 +225,7 @@ export function MissionControlDashboard({
                 <section className={`${styles.panel} ${styles.powerPanel}`} aria-labelledby="power-title">
                     <SectionHeading index="05" title="RTG power history" id="power-title" />
                     <p className={styles.panelIntro}>Supported historical points show the long decline in available electrical power.</p>
-                    <svg className={styles.powerChart} viewBox="0 0 600 260" role="img" aria-labelledby="power-chart-title power-chart-desc">
-                        <title id="power-chart-title">Voyager 1 RTG electrical power history</title>
+                    <svg className={styles.powerChart} viewBox="0 0 600 260" role="img" aria-label="Voyager 1 RTG electrical power history" aria-describedby="power-chart-desc">
                         <desc id="power-chart-desc">Power declines from approximately 470 watts after launch to 430 watts around Saturn and 225 watts in 2023.</desc>
                         <path d="M52 30 V210 H568" className={styles.chartAxes} />
                         <path d="M52 90 H568 M52 150 H568" className={styles.chartGrid} />
@@ -275,8 +274,7 @@ export function MissionControlDashboard({
 
                 <section className={`${styles.panel} ${styles.trajectoryPanel}`} aria-labelledby="trajectory-title">
                     <SectionHeading index="07" title="Trajectory context" id="trajectory-title" />
-                    <svg className={styles.trajectory} viewBox="0 0 600 300" role="img" aria-labelledby="trajectory-chart-title trajectory-chart-desc">
-                        <title id="trajectory-chart-title">Schematic Voyager 1 trajectory</title>
+                    <svg className={styles.trajectory} viewBox="0 0 600 300" role="img" aria-label="Schematic Voyager 1 trajectory" aria-describedby="trajectory-chart-desc">
                         <desc id="trajectory-chart-desc">Voyager 1 travels outward from the Sun, past Jupiter and Saturn, across the heliopause, and into interstellar space.</desc>
                         <path d="M74 232 C173 230 188 159 281 164 S383 112 536 58" />
                         <circle cx="74" cy="232" r="18" />

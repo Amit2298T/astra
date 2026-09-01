@@ -11,14 +11,12 @@ import styles from "./FreeFlightHUD.module.css";
 
 interface FreeFlightHUDProps {
     onSystemOverview?: () => void;
-    onReturnToSystem?: () => void;
     onEnterGalaxyView?: () => void;
     systemOverviewLabel?: string;
 }
 
 export function FreeFlightHUD({
     onSystemOverview,
-    onReturnToSystem,
     onEnterGalaxyView,
     systemOverviewLabel = "Solar System Overview",
 }: FreeFlightHUDProps) {
@@ -273,7 +271,7 @@ export function FreeFlightHUD({
             )}
 
             <button
-                onClick={onSystemOverview ?? onReturnToSystem}
+                onClick={onSystemOverview}
                 style={{
                     width: "100%",
                     background: "rgba(255, 255, 255, 0.08)",
