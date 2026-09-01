@@ -35,7 +35,7 @@ export function PlanetInfoOverlay({
             onFocus={onFocus}
             onFollow={onFollow}
             onStopFollow={onStopFollow}
-            onSolarSystemOverview={onBackToSystem}
+            onSystemOverview={onBackToSystem}
         />
     );
 }

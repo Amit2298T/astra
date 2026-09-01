@@ -1,6 +1,6 @@
 "use client";
 
-import { useFrame, useThree } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 
@@ -12,6 +12,10 @@ import {
     createSeededRandom,
     randomNormal,
 } from "@/engine/math/seededRandom";
+import {
+    PERFORMANCE_PROFILES,
+    type PerformanceTier,
+} from "@/engine/performance/PerformanceTier";
 
 interface CloudPopulation {
     positions: Float32Array;
@@ -23,6 +27,7 @@ interface CloudPopulation {
 
 interface NebulaCloudProps {
     config: NebulaConfig;
+    performanceTier: PerformanceTier;
 }
 
 const cloudVertexShader = /* glsl */ `
@@ -392,9 +397,8 @@ function getDustStructures(preset: NebulaVisualPreset): readonly DustStructure[]
     }
 }
 
-export function NebulaCloud({ config }: NebulaCloudProps) {
-    const compact = useThree((state) => state.size.width < 720);
-    const qualityScale = compact ? 0.62 : 1;
+export function NebulaCloud({ config, performanceTier }: NebulaCloudProps) {
+    const qualityScale = PERFORMANCE_PROFILES[performanceTier].nebulaScale;
     const cloudMaterialRef = useRef<THREE.ShaderMaterial>(null);
     const dustMaterialRef = useRef<THREE.ShaderMaterial>(null);
     const populations = useMemo(

@@ -1,4 +1,5 @@
 import type { GalacticNavigationTarget } from "@/data/galaxy";
+import type { StarSystemEntryId } from "@/data/starSystems";
 import { getAstronomyRecord } from "@/data/astronomy";
 import type { GalaxyNavigationMode } from "../universe/galaxy/useGalaxyNavigation";
 import { AstronomyRecordDetails } from "./AstronomyRecordDetails";
@@ -11,6 +12,7 @@ interface GalacticInfoOverlayProps {
     onFocus: () => void;
     onTravel: () => void;
     onEnterLocalSpace: () => void;
+    onEnterStarSystem?: (systemId: StarSystemEntryId) => void;
     onEnterBlackHole?: () => void;
     onEnterNebula?: () => void;
     onEnterCluster?: () => void;
@@ -24,6 +26,7 @@ export function GalacticInfoOverlay({
     onFocus,
     onTravel,
     onEnterLocalSpace,
+    onEnterStarSystem,
     onEnterBlackHole,
     onEnterNebula,
     onEnterCluster,
@@ -90,6 +93,11 @@ export function GalacticInfoOverlay({
                         onClick={onEnterLocalSpace}
                     >
                         Enter Local Space
+                    </button>
+                )}
+                {target.starSystemId && isActiveTarget && onEnterStarSystem && (
+                    <button className={styles.localButton} onClick={() => onEnterStarSystem(target.starSystemId!)}>
+                        Enter System
                     </button>
                 )}
                 {target.type === "galacticCenter" &&

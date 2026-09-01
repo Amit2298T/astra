@@ -1,192 +1,142 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
+import { useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
-import type { StarSystemConfig } from "@/data/starSystems";
+import {
+    getStarSystemEntryId,
+    getStarSystemRegistryName,
+    type ExoplanetConfig,
+    type StarSystemConfig,
+} from "@/data/starSystems";
 import type { SelectedObject } from "@/engine/camera/types";
-import { Star } from "./Star";
-import { Exoplanet } from "./Exoplanet";
 import { sceneRegistry } from "@/engine/registry/SceneRegistry";
 import { useSceneLayerOpacity } from "../scale/FadingSceneGroup";
+import { Exoplanet } from "./Exoplanet";
+import { Star } from "./Star";
 
 interface StarSystemProps {
     config: StarSystemConfig;
+    positionOverride?: [number, number, number];
+    selectedObjectId?: string;
     onSelect?: (object: SelectedObject) => void;
     onFocus?: (object: SelectedObject) => void;
 }
 
-// Module-level reused vector for LOD distance checks
-const tempSystemPos = new THREE.Vector3();
+interface PlanetLabelPresentation {
+    offset: [number, number, number];
+    maxDistance: number;
+}
 
-export function StarSystem({ config, onSelect, onFocus }: StarSystemProps) {
-    const systemGroupRef = useRef<THREE.Group>(null);
-    const binaryBarycenterRef = useRef<THREE.Group>(null);
-    const starAAnchorRef = useRef<THREE.Group>(null);
-    const starBAnchorRef = useRef<THREE.Group>(null);
-    const proximaAnchorRef = useRef<THREE.Group>(null);
-    const proximaBAnchorRef = useRef<THREE.Group>(null);
-    const [isNear, setIsNear] = useState(false);
+const systemWorldPosition = new THREE.Vector3();
+const TRAPPIST_LABEL_PRESENTATION: Record<
+    string,
+    PlanetLabelPresentation
+> = {
+    "trappist-1-b": { offset: [0.45, 0.72, 0], maxDistance: 24 },
+    "trappist-1-c": { offset: [-0.5, -0.74, 0], maxDistance: 27 },
+    "trappist-1-d": { offset: [-0.58, 0.82, 0], maxDistance: 30 },
+    "trappist-1-e": { offset: [0.64, -0.86, 0], maxDistance: 72 },
+    "trappist-1-f": { offset: [0.76, 0.96, 0], maxDistance: 34 },
+    "trappist-1-g": { offset: [-0.88, -1.04, 0], maxDistance: 38 },
+    "trappist-1-h": { offset: [1, 1.14, 0], maxDistance: 42 },
+};
+
+export function StarSystem({
+    config,
+    positionOverride,
+    selectedObjectId,
+    onSelect,
+    onFocus,
+}: StarSystemProps) {
+    const rootRef = useRef<THREE.Group>(null);
+    const binaryRef = useRef<THREE.Group>(null);
+    const lodFrameRef = useRef(0);
+    const [near, setNear] = useState(false);
     const { camera } = useThree();
-    const layerOpacity = useSceneLayerOpacity();
-
-    const { position, label, distanceLightYears, stars, exoplanets } = config;
-
-    const starA = stars.find((star) => star.id === "alpha-centauri-a");
-    const starB = stars.find((star) => star.id === "alpha-centauri-b");
-    const proxima = stars.find((star) => star.id === "proxima-centauri");
-    const proximaB = exoplanets.find(
-        (planet) => planet.id === "proxima-centauri-b"
+    const opacity = useSceneLayerOpacity();
+    const binaryIds = new Set(config.binaryStarIds ?? []);
+    const binaryStars = config.stars.filter((star) => binaryIds.has(star.id));
+    const otherStars = config.stars.filter((star) => !binaryIds.has(star.id));
+    const systemRegistryName = getStarSystemRegistryName(
+        getStarSystemEntryId(config)
     );
 
-    // Binary orbital animation around barycenter for Alpha Centauri A & B
+    useEffect(() => {
+        const object = rootRef.current;
+        if (!object) return;
+
+        sceneRegistry.registerObject(systemRegistryName, object);
+        return () => sceneRegistry.unregisterObject(systemRegistryName, object);
+    }, [systemRegistryName]);
+
     useFrame(({ clock }) => {
-        if (binaryBarycenterRef.current) {
-            // Simplified slow educational binary orbit
-            const t = clock.getElapsedTime();
-            const binaryAngle = t * 0.04;
-            binaryBarycenterRef.current.rotation.y = binaryAngle;
+        if (binaryRef.current) {
+            binaryRef.current.rotation.y =
+                clock.elapsedTime * (config.binaryOrbitSpeed ?? 0);
         }
 
-        if (proximaBAnchorRef.current && proxima && proximaB) {
-            const t = clock.getElapsedTime();
-            const orbitAngle =
-                proximaB.initialAngle + t * proximaB.orbitSpeed;
-            proximaBAnchorRef.current.position.set(
-                proxima.relativePosition[0] +
-                    Math.cos(orbitAngle) * proximaB.orbitRadius,
-                proxima.relativePosition[1],
-                proxima.relativePosition[2] +
-                    Math.sin(orbitAngle) * proximaB.orbitRadius
-            );
-        }
+        lodFrameRef.current = (lodFrameRef.current + 1) % 12;
+        if (lodFrameRef.current !== 0 || !rootRef.current) return;
 
-        if (systemGroupRef.current) {
-            systemGroupRef.current.getWorldPosition(tempSystemPos);
-            const distToCam = camera.position.distanceTo(tempSystemPos);
-
-            // LOD threshold: 140 scene units
-            const near = distToCam < 140;
-            if (near !== isNear) {
-                setIsNear(near);
-            }
-        }
+        rootRef.current.getWorldPosition(systemWorldPosition);
+        const nextNear = camera.position.distanceTo(systemWorldPosition) < 140;
+        if (nextNear !== near) setNear(nextNear);
     });
 
-    // Navigation anchors remain mounted and registered independently of visual LOD.
-    useEffect(() => {
-        const registrations: Array<{
-            name: string;
-            object: THREE.Object3D;
-        }> = [];
+    const renderStar = (star: (typeof config.stars)[number]) => (
+        <Star
+            key={star.id}
+            config={star}
+            showLabel={near}
+            onSelect={onSelect}
+            onFocus={onFocus}
+        />
+    );
 
-        const registerAnchor = (
-            name: string | undefined,
-            object: THREE.Object3D | null
-        ) => {
-            if (!name || !object) return;
-            sceneRegistry.registerObject(name, object);
-            registrations.push({ name, object });
-        };
+    const renderPlanet = (planet: ExoplanetConfig) => {
+        const host = config.stars.find(
+            (star) => star.name === planet.parentStarName
+        );
+        const labelPresentation = TRAPPIST_LABEL_PRESENTATION[planet.id];
+        const isSelected = selectedObjectId === planet.id;
 
-        registerAnchor(starA?.registryName, starAAnchorRef.current);
-        registerAnchor(starB?.registryName, starBAnchorRef.current);
-        registerAnchor(proxima?.registryName, proximaAnchorRef.current);
-        registerAnchor(proximaB?.registryName, proximaBAnchorRef.current);
-
-        return () => {
-            registrations.forEach(({ name, object }) => {
-                sceneRegistry.unregisterObject(name, object);
-            });
-        };
-    }, [starA, starB, proxima, proximaB]);
+        return (
+            <Exoplanet
+                key={planet.id}
+                config={planet}
+                parentOffset={host?.relativePosition ?? [0, 0, 0]}
+                showLabel={near}
+                labelOffset={labelPresentation?.offset}
+                labelMaxDistance={
+                    isSelected ? undefined : labelPresentation?.maxDistance
+                }
+                labelPriority={
+                    labelPresentation
+                        ? isSelected
+                            ? "selected"
+                            : "secondary"
+                        : undefined
+                }
+                onSelect={onSelect}
+                onFocus={onFocus}
+            />
+        );
+    };
 
     return (
-        <group ref={systemGroupRef} position={position}>
-            {/* Binary Pair Sub-System (Alpha Centauri A & B orbiting barycenter) */}
-            <group ref={binaryBarycenterRef}>
-                {starA && (
-                    <group
-                        ref={starAAnchorRef}
-                        position={starA.relativePosition}
-                    />
-                )}
-                {starB && (
-                    <group
-                        ref={starBAnchorRef}
-                        position={starB.relativePosition}
-                    />
-                )}
-                {starA && (
-                    <Star
-                        config={starA}
-                        showLabel={isNear}
-                        registerNavigationTarget={false}
-                        onSelect={onSelect}
-                        onFocus={onFocus}
-                    />
-                )}
-                {starB && (
-                    <Star
-                        config={starB}
-                        showLabel={isNear}
-                        registerNavigationTarget={false}
-                        onSelect={onSelect}
-                        onFocus={onFocus}
-                    />
-                )}
-            </group>
-
-            {/* Proxima Centauri (Visually separated red dwarf) */}
-            {proxima && (
-                <>
-                    <group
-                        ref={proximaAnchorRef}
-                        position={proxima.relativePosition}
-                    />
-                    <Star
-                        config={proxima}
-                        showLabel={isNear}
-                        registerNavigationTarget={false}
-                        onSelect={onSelect}
-                        onFocus={onFocus}
-                    />
-                </>
+        <group ref={rootRef} position={positionOverride ?? config.position}>
+            {binaryStars.length > 0 && (
+                <group ref={binaryRef}>{binaryStars.map(renderStar)}</group>
             )}
-
-            {/* Proxima Centauri b (Exoplanet orbiting Proxima Centauri) */}
-            {proxima && proximaB && (
+            {otherStars.map(renderStar)}
+            {(positionOverride || near) &&
+                config.knownPlanets.map(renderPlanet)}
+            {!near && config.showLocalBeacon && (
                 <>
-                    <group
-                        ref={proximaBAnchorRef}
-                        position={[
-                            proxima.relativePosition[0] +
-                                Math.cos(proximaB.initialAngle) *
-                                    proximaB.orbitRadius,
-                            proxima.relativePosition[1],
-                            proxima.relativePosition[2] +
-                                Math.sin(proximaB.initialAngle) *
-                                    proximaB.orbitRadius,
-                        ]}
-                    />
-                    <Exoplanet
-                        config={proximaB}
-                        parentOffset={proxima.relativePosition}
-                        showLabel={isNear}
-                        registerNavigationTarget={false}
-                        onSelect={onSelect}
-                        onFocus={onFocus}
-                    />
-                </>
-            )}
-
-            {/* Distant Scale Cue / LOD System Beacon (visible only when far away) */}
-            {!isNear && (
-                <>
-                    {/* Subtle distant beacon star point */}
-                    <mesh position={[0, 0, 0]}>
+                    <mesh>
                         <sphereGeometry args={[2.5, 16, 16]} />
                         <meshBasicMaterial
                             color="#ffe082"
@@ -195,52 +145,46 @@ export function StarSystem({ config, onSelect, onFocus }: StarSystemProps) {
                             toneMapped={false}
                         />
                     </mesh>
-
                     <Html
-                        position={[0, 4.0, 0]}
+                        position={[0, 4, 0]}
                         center
                         distanceFactor={60}
                         style={{ pointerEvents: "none" }}
                     >
                         <div
                             style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                pointerEvents: "none",
-                                userSelect: "none",
-                                opacity: layerOpacity,
+                                opacity,
+                                color: "#ffd54f",
+                                fontSize: 12,
+                                fontWeight: 700,
+                                whiteSpace: "nowrap",
+                                textShadow: "0 0 10px #000",
                             }}
                         >
-                            <span
-                                style={{
-                                    color: "#ffd54f",
-                                    fontSize: "13px",
-                                    fontFamily: "Inter, system-ui, sans-serif",
-                                    fontWeight: 700,
-                                    letterSpacing: "0.08em",
-                                    textTransform: "uppercase",
-                                    textShadow: "0 0 10px rgba(0,0,0,0.95)",
-                                    whiteSpace: "nowrap",
-                                }}
-                            >
-                                ✦ {label}
-                            </span>
-                            <span
-                                style={{
-                                    color: "rgba(255, 255, 255, 0.65)",
-                                    fontSize: "10px",
-                                    fontFamily: "Inter, system-ui, sans-serif",
-                                    letterSpacing: "0.05em",
-                                    marginTop: 2,
-                                    textShadow: "0 0 6px rgba(0,0,0,0.9)",
-                                }}
-                            >
-                                {distanceLightYears}
-                            </span>
+                            ✦ {config.label} · {config.distanceLightYears}
                         </div>
                     </Html>
                 </>
+            )}
+            {near && config.knownPlanets.length > 0 && (
+                <Html
+                    position={[0, -2.2, 0]}
+                    center
+                    distanceFactor={18}
+                    style={{ pointerEvents: "none" }}
+                >
+                    <span
+                        style={{
+                            opacity: 0.65,
+                            color: "#cbd5e1",
+                            fontSize: 9,
+                            whiteSpace: "nowrap",
+                        }}
+                    >
+                        Orbital distances and body sizes are compressed for
+                        readability.
+                    </span>
+                </Html>
             )}
         </group>
     );

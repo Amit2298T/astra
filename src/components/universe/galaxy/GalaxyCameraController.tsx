@@ -10,6 +10,11 @@ import { galaxyTravelManager } from "@/engine/navigation/GalaxyTravelManager";
 import { galacticRegistry } from "@/engine/registry/GalacticRegistry";
 import { GALACTIC_INSPECTION_DIRECTION } from "@/engine/scale/CoordinateTransformer";
 import type { GalaxyNavigationMode } from "./useGalaxyNavigation";
+import { milkyWayConfig } from "@/data/galaxy";
+import {
+    calculateLocalNeighborhoodBounds,
+    getLocalNeighborhoodCameraDistance,
+} from "@/engine/navigation/LocalNeighborhoodView";
 
 interface GalaxyCameraControllerProps {
     mode: GalaxyNavigationMode;
@@ -56,6 +61,24 @@ export function GalaxyCameraController({
         if (mode === "overview") {
             targetPosition.set(0, 0, 0);
             setOverviewPosition(size.width / size.height);
+        } else if (mode === "neighborhood") {
+            const bounds = calculateLocalNeighborhoodBounds(
+                milkyWayConfig.locations
+            );
+            targetPosition.set(...bounds.center);
+            offsetDirection
+                .set(...GALACTIC_INSPECTION_DIRECTION)
+                .normalize();
+            const fov =
+                camera instanceof THREE.PerspectiveCamera ? camera.fov : 50;
+            const distance = getLocalNeighborhoodCameraDistance(
+                bounds.radius,
+                fov,
+                size.width / size.height
+            );
+            desiredCameraPosition
+                .copy(targetPosition)
+                .addScaledVector(offsetDirection, distance);
         } else if (mode === "focus" && activeTarget) {
             galacticRegistry.getPosition(activeTarget, targetPosition);
             offsetDirection

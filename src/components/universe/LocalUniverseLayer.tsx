@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { solarSystemData } from "@/data/solarSystem";
 import { dwarfPlanets } from "@/data/dwarfPlanets";
 import { spacecraftData } from "@/data/spacecraft";
-import { starSystemsData } from "@/data/starSystems";
+import { getStarSystemByEntryId, starSystemsData, type StarSystemEntryId } from "@/data/starSystems";
 import type { SelectedObject } from "@/engine/camera/types";
 import { OrbitRing } from "./OrbitRing";
 import { Planet } from "./Planet";
@@ -13,20 +13,46 @@ import { Sun } from "./Sun";
 import { AsteroidBelt } from "./solar/AsteroidBelt";
 import { DwarfPlanet } from "./solar/DwarfPlanet";
 import { KuiperBelt } from "./solar/KuiperBelt";
+import {
+    PERFORMANCE_PROFILES,
+    type PerformanceTier,
+} from "@/engine/performance/PerformanceTier";
 
 interface LocalUniverseLayerProps {
+    activeStarSystemId: StarSystemEntryId | null;
+    selectedObjectId?: string;
     onSelectPlanet: (name: string) => void;
     onFocusPlanet: (name: string) => void;
     onSelectObject: (object: SelectedObject) => void;
     onFocusObject: (object: SelectedObject) => void;
+    performanceTier: PerformanceTier;
 }
 
 export function LocalUniverseLayer({
+    activeStarSystemId,
+    selectedObjectId,
     onSelectPlanet,
     onFocusPlanet,
     onSelectObject,
     onFocusObject,
+    performanceTier,
 }: LocalUniverseLayerProps) {
+    const activeStarSystem = getStarSystemByEntryId(activeStarSystemId);
+
+    if (activeStarSystem) {
+        return (
+            <group>
+                <StarSystem
+                    config={activeStarSystem}
+                    positionOverride={[0, 0, 0]}
+                    selectedObjectId={selectedObjectId}
+                    onSelect={onSelectObject}
+                    onFocus={onFocusObject}
+                />
+            </group>
+        );
+    }
+
     return (
         <group>
             <Sun onSelect={onSelectObject} onFocus={onFocusObject} />
@@ -40,14 +66,19 @@ export function LocalUniverseLayer({
                 onSelect={onSelectObject}
                 onFocus={onFocusObject}
             />
-
-            <AsteroidBelt />
-            <KuiperBelt />
+            <AsteroidBelt performanceTier={performanceTier} />
+            <KuiperBelt performanceTier={performanceTier} />
 
             <Suspense fallback={null}>
                 {solarSystemData.planets.map((planet) => (
                     <group key={planet.name}>
-                        <OrbitRing radius={planet.orbitRadius} />
+                        <OrbitRing
+                            radius={planet.orbitRadius}
+                            segments={
+                                PERFORMANCE_PROFILES[performanceTier]
+                                    .orbitRingSegments
+                            }
+                        />
                         <Planet
                             config={planet}
                             onSelect={onSelectPlanet}
@@ -67,7 +98,10 @@ export function LocalUniverseLayer({
                             longitudeOfAscendingNode={
                                 dwarfPlanet.longitudeOfAscendingNode
                             }
-                            segments={192}
+                            segments={
+                                PERFORMANCE_PROFILES[performanceTier]
+                                    .dwarfOrbitRingSegments
+                            }
                         />
                         <DwarfPlanet
                             config={dwarfPlanet}

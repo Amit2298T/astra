@@ -1,10 +1,15 @@
 "use client";
 
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
 import { createSeededRandom, randomNormal } from "@/engine/math/seededRandom";
+import {
+    PERFORMANCE_PROFILES,
+    scaledCount,
+    type PerformanceTier,
+} from "@/engine/performance/PerformanceTier";
 
 interface SkyBandPopulation {
     positions: Float32Array;
@@ -92,25 +97,36 @@ const prominentBandStars = createSkyBandPopulation({
 
 interface SkyBandPointsProps {
     population: SkyBandPopulation;
+    count: number;
     size: number;
     opacity: number;
 }
 
 function SkyBandPoints({
     population,
+    count,
     size,
     opacity,
 }: SkyBandPointsProps) {
+    const positions = useMemo(
+        () => population.positions.subarray(0, count * 3),
+        [count, population.positions]
+    );
+    const colors = useMemo(
+        () => population.colors.subarray(0, count * 3),
+        [count, population.colors]
+    );
+
     return (
         <points frustumCulled={false} raycast={() => undefined}>
             <bufferGeometry>
                 <bufferAttribute
                     attach="attributes-position"
-                    args={[population.positions, 3]}
+                    args={[positions, 3]}
                 />
                 <bufferAttribute
                     attach="attributes-color"
-                    args={[population.colors, 3]}
+                    args={[colors, 3]}
                 />
             </bufferGeometry>
             <pointsMaterial
@@ -158,10 +174,15 @@ const hazeFragmentShader = `
  */
 interface MilkyWaySkyBandProps {
     opacityScale?: number;
+    performanceTier?: PerformanceTier;
 }
 
-export function MilkyWaySkyBand({ opacityScale = 1 }: MilkyWaySkyBandProps) {
+export function MilkyWaySkyBand({
+    opacityScale = 1,
+    performanceTier = "high",
+}: MilkyWaySkyBandProps) {
     const rootRef = useRef<THREE.Group>(null);
+    const qualityScale = PERFORMANCE_PROFILES[performanceTier].skyBandScale;
 
     useFrame(({ camera }) => {
         rootRef.current?.position.copy(camera.position);
@@ -184,11 +205,13 @@ export function MilkyWaySkyBand({ opacityScale = 1 }: MilkyWaySkyBandProps) {
             </mesh>
             <SkyBandPoints
                 population={bandStars}
+                count={scaledCount(BAND_STAR_COUNT, qualityScale)}
                 size={0.58}
                 opacity={0.48 * opacityScale}
             />
             <SkyBandPoints
                 population={prominentBandStars}
+                count={scaledCount(PROMINENT_STAR_COUNT, qualityScale)}
                 size={0.92}
                 opacity={0.62 * opacityScale}
             />

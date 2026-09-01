@@ -1,8 +1,12 @@
 import { Html } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
+import { useRef, useState } from "react";
 import * as THREE from "three";
 
 import type { GalacticNavigationTarget } from "@/data/galaxy";
+import styles from "./GalacticMarker.module.css";
+import type { PerformanceTier } from "@/engine/performance/PerformanceTier";
 
 const CLUSTER_SPARKLES = [
     [0, 0, 0, 4.2],
@@ -18,6 +22,8 @@ interface GalacticMarkerProps {
     emphasized?: boolean;
     onSelect?: (location: GalacticNavigationTarget) => void;
     opacityScale?: number;
+    revealNearbyLabels?: boolean;
+    performanceTier?: PerformanceTier;
 }
 
 export function GalacticMarker({
@@ -26,15 +32,51 @@ export function GalacticMarker({
     emphasized = false,
     onSelect,
     opacityScale = 1,
+    revealNearbyLabels = false,
+    performanceTier = "high",
 }: GalacticMarkerProps) {
+    const groupRef = useRef<THREE.Group>(null);
+    const lodFrameRef = useRef(0);
+    const { camera, size } = useThree();
+    const [cameraNear, setCameraNear] = useState(false);
+    useFrame(() => {
+        lodFrameRef.current = (lodFrameRef.current + 1) % 12;
+        if (lodFrameRef.current !== 0) return;
+        if (!groupRef.current) return;
+        const near = camera.position.distanceTo(groupRef.current.position) < 500;
+        if (near !== cameraNear) setCameraNear(near);
+    });
     if (!location.markerVisible) return null;
 
     const isCenter = location.type === "galacticCenter";
     const isNebula = location.type === "nebula";
     const isCluster = location.type === "starCluster";
+    const isNearbySystem =
+        Boolean(location.starSystemId) ||
+        location.localSpaceDestination === "solarSystem";
+    const isMobile = performanceTier === "low" || size.width < 700;
+    const isPriorityNearbySystem =
+        isNearbySystem && (location.markerLabelPriority ?? 0) >= 4;
+    const nearbyDisplayName =
+        location.starSystemId === "alpha-centauri"
+            ? "Alpha Centauri"
+            : location.starSystemId === "sirius"
+              ? "Sirius"
+              : location.name;
+    const nearbyLabelClassName = [
+        styles.nearbyLabel,
+        selected || emphasized
+            ? styles.nearbySelected
+            : isPriorityNearbySystem
+              ? styles.nearbyPriority
+              : styles.nearbySecondary,
+    ].join(" ");
+    const nearbyLabelOpacity =
+        opacityScale *
+        (selected || emphasized ? 1 : isPriorityNearbySystem ? 0.9 : 0.72);
     const markerColor =
         location.markerColor ?? (isCenter ? "#e8ad69" : "#67d5ff");
-    const emphasisScale = emphasized ? 1.22 : selected ? 1.12 : 1;
+    const emphasisScale = (emphasized ? 1.3 : selected ? 1.22 : 1) * (location.markerSizeScale ?? 1);
     const coreRadius = isCenter ? 14 : isNebula ? 7 : 10;
     const ringInnerRadius = isCenter ? 23 : isNebula ? 14 : 17;
     const ringOuterRadius = isCenter ? 27 : isNebula ? 17 : 20;
@@ -48,6 +90,7 @@ export function GalacticMarker({
 
     return (
         <group
+            ref={groupRef}
             position={location.position}
             scale={emphasisScale}
             onClick={handleClick}
@@ -60,6 +103,12 @@ export function GalacticMarker({
                 document.body.style.cursor = "auto";
             }}
         >
+            {isNearbySystem && (
+                <mesh>
+                    <sphereGeometry args={[24, 12, 12]} />
+                    <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+                </mesh>
+            )}
             {isCluster ? (
                 <>
                     <mesh raycast={() => undefined}>
@@ -162,52 +211,63 @@ export function GalacticMarker({
                     </mesh>
                 </>
             )}
-            <Html
+            {((!isNearbySystem && (performanceTier !== "low" || isCenter || selected || emphasized)) || (isNearbySystem && (selected || emphasized || (!isMobile && cameraNear) || (revealNearbyLabels && (location.markerLabelPriority ?? 0) >= (isMobile ? 4 : 3))))) && <Html
                 center
                 position={[
-                    0,
+                    location.markerLabelOffsetX ?? 0,
                     location.markerLabelOffset ?? (isCenter ? 68 : 58),
                     0,
                 ]}
                 distanceFactor={1500}
             >
                 <div
+                    className={isNearbySystem ? nearbyLabelClassName : undefined}
                     title={location.description}
                     style={{
                         pointerEvents: "none",
-                        opacity: opacityScale,
+                        opacity: isNearbySystem
+                            ? nearbyLabelOpacity
+                            : opacityScale,
                         whiteSpace: "nowrap",
-                        color: isCenter
-                            ? "#fde7bd"
-                            : isCluster
-                              ? "#e5efff"
-                            : isNebula
-                              ? "#efe2ed"
-                              : "#d6f3ff",
-                        fontFamily: "Inter, system-ui, sans-serif",
-                        fontSize: "clamp(10px, 1.1vw, 13px)",
-                        fontWeight: 650,
-                        letterSpacing: "0.08em",
-                        textTransform: "uppercase",
-                        textShadow: "0 2px 10px #000, 0 0 16px #000",
-                        padding: "4px 7px",
-                        border: `1px solid ${
-                            isCenter
-                                ? "rgba(232, 173, 105, 0.2)"
-                                : isCluster
-                                  ? "rgba(169, 213, 255, 0.22)"
-                                : isNebula
-                                  ? "rgba(202, 163, 193, 0.18)"
-                                : "rgba(103, 213, 255, 0.2)"
-                        }`,
-                        borderRadius: 5,
-                        background: "rgba(3, 7, 18, 0.62)",
-                        backdropFilter: "blur(5px)",
+                        ...(isNearbySystem
+                            ? {}
+                            : {
+                                  color: isCenter
+                                      ? "#fde7bd"
+                                      : isCluster
+                                        ? "#e5efff"
+                                        : isNebula
+                                          ? "#efe2ed"
+                                          : "#d6f3ff",
+                                  fontFamily: "Inter, system-ui, sans-serif",
+                                  fontSize: "clamp(10px, 1.1vw, 13px)",
+                                  fontWeight: 650,
+                                  letterSpacing: "0.08em",
+                                  textTransform: "uppercase" as const,
+                                  textShadow:
+                                      "0 2px 10px #000, 0 0 16px #000",
+                                  padding: "4px 7px",
+                                  border: `1px solid ${
+                                      isCenter
+                                          ? "rgba(232, 173, 105, 0.2)"
+                                          : isCluster
+                                            ? "rgba(169, 213, 255, 0.22)"
+                                            : isNebula
+                                              ? "rgba(202, 163, 193, 0.18)"
+                                              : "rgba(103, 213, 255, 0.2)"
+                                  }`,
+                                  borderRadius: 5,
+                                  background: "rgba(3, 7, 18, 0.62)",
+                                  backdropFilter: "blur(5px)",
+                              }),
+                        transform: location.markerLabelScreenOffset
+                            ? `translate(${location.markerLabelScreenOffset[0]}px, ${location.markerLabelScreenOffset[1]}px)`
+                            : undefined,
                     }}
                 >
-                    {location.name}
+                    {isNearbySystem ? nearbyDisplayName : location.name}
                 </div>
-            </Html>
+            </Html>}
         </group>
     );
 }

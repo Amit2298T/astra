@@ -2,6 +2,15 @@ import { defineAstronomyRecords } from "./define";
 import { astronomySources as source } from "./sources";
 
 export const starAstronomyRecords = defineAstronomyRecords([
+    ...([
+        ["barnards-star", "Barnard's Star", "M4V red dwarf", "A nearby red dwarf famous for its exceptionally high proper motion; disputed planet claims are omitted.", source.barnardsStar],
+        ["sirius", "Sirius System", "A-star and white-dwarf binary", "Sirius is a nearby binary containing luminous Sirius A and white dwarf Sirius B.", source.sirius],
+        ["sirius-a", "Sirius A", "A1V main-sequence star", "Sirius A is the luminous main-sequence primary of the Sirius binary.", source.sirius],
+        ["sirius-b", "Sirius B", "DA2 white dwarf", "Sirius B is the compact white-dwarf companion of Sirius A.", source.sirius],
+        ["epsilon-eridani", "Epsilon Eridani", "K2V main-sequence star", "Epsilon Eridani is a nearby K-type dwarf with a debris-disk environment; uncertain planet claims are omitted.", source.epsilonEridani],
+        ["tau-ceti", "Tau Ceti", "G8V main-sequence star", "Tau Ceti is a nearby G-type star; disputed candidate planets are omitted.", source.tauCeti],
+        ["trappist-1", "TRAPPIST-1", "M8V ultracool dwarf system", "TRAPPIST-1 is an ultracool dwarf orbited by seven confirmed, roughly Earth-sized planets: b through h.", source.trappist1],
+    ] as const).map(([id,name,classification,summary,citation]) => ({id,name,objectType:id === "sirius" ? ("starSystem" as const) : ("star" as const),classification,summary,factGroups:[{category:"Context" as const,facts:[{label:"Model note",value:"Nearby placement preserves real direction; marker offsets are uniformly magnified for readability."}]}],sources:[citation]})),
     {
         id: "sun", name: "Sun", objectType: "star", classification: "G2V main-sequence star",
         summary: "The Sun is the 4.6-billion-year-old star whose gravity organizes the Solar System and whose light and heat power most life on Earth.",

@@ -3,6 +3,7 @@ export type AstronomyObjectType =
     | "moon"
     | "dwarfPlanet"
     | "star"
+    | "starSystem"
     | "spacecraft"
     | "exoplanet"
     | "blackHole"

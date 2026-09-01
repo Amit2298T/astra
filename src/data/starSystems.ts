@@ -1,237 +1,43 @@
-/**
- * Star system, stellar, and exoplanet data configurations for ASTRA.
- */
+import { heliocentricGalacticPosition, magnifyNearbyGalacticOffset, type ScenePosition } from "@/engine/scale/CoordinateTransformer";
+import { SOLAR_SYSTEM_GALACTIC_POSITION } from "@/data/nebulae";
 
-export interface StarFact {
-    label: string;
-    value: string;
-}
+export interface StarFact { label: string; value: string }
+export interface StarConfig { id:string; name:string; systemName:string; spectralType:string; visualRadius:number; coreColor:string; glowColor:string; outerGlowColor:string; temperature:string; luminosity:string; mass:string; registryName:string; relativePosition:[number,number,number]; navigationRadius:number; description:string; facts:StarFact[]; astronomyRecordId?:string }
+export interface ExoplanetConfig { id:string; name:string; systemName:string; parentStarName:string; radius:number; radiusEarth:number; massEarth?:number; semiMajorAxisAu:number; orbitalPeriodDays:number; orbitRadius:number; rotationSpeed:number; color:string; texturePath?:string; initialAngle:number; registryName:string; navigationRadius:number; habitableZone:boolean; habitableZoneContext?:string; planetType:string; discoveryYear:number; discoveryMethod:string; astronomyRecordId:string; description:string; facts:StarFact[] }
+export interface StarSystemConfig { id:string; name:string; distanceLy:number; distanceLightYears:string; galacticLongitudeDeg:number; galacticLatitudeDeg:number; galacticPosition:ScenePosition; galacticMarkerPosition:ScenePosition; position:[number,number,number]; systemType:string; label:string; summary:string; description:string; astronomyRecordId:string; stars:StarConfig[]; knownPlanets:ExoplanetConfig[]; exoplanets:ExoplanetConfig[]; binaryStarIds?:readonly [string,string]; binaryOrbitSpeed?:number; markerLabelPriority?:number; showLocalBeacon?:boolean }
 
-export interface StarConfig {
-    id: string;
-    name: string;
-    systemName: string;
-    spectralType: string;
-    visualRadius: number;
-    coreColor: string;
-    glowColor: string;
-    outerGlowColor: string;
-    temperature: string;
-    luminosity: string;
-    mass: string;
-    registryName: string;
-    relativePosition: [number, number, number];
-    navigationRadius: number;
-    description: string;
-    facts: StarFact[];
-}
+const coords=(d:number,l:number,b:number)=>{const p=heliocentricGalacticPosition(SOLAR_SYSTEM_GALACTIC_POSITION,d,l,b);return {galacticPosition:p,galacticMarkerPosition:magnifyNearbyGalacticOffset(SOLAR_SYSTEM_GALACTIC_POSITION,p)}};
+const local=(d:number,l:number,b:number):[number,number,number]=>{const lo=l*Math.PI/180,la=b*Math.PI/180,r=d*31;return [Math.cos(la)*Math.cos(lo)*r,Math.sin(la)*r,Math.cos(la)*Math.sin(lo)*r]};
+const mkStar=(id:string,name:string,sys:string,type:string,r:number,c:[string,string,string],temp:string,lum:string,mass:string,pos:[number,number,number],desc:string,d:number):StarConfig=>({id,name,systemName:sys,spectralType:type,visualRadius:r,coreColor:c[0],glowColor:c[1],outerGlowColor:c[2],temperature:temp,luminosity:lum,mass,registryName:name,relativePosition:pos,navigationRadius:Math.max(2.2,r*3),description:desc,facts:[{label:"Spectral class",value:type},{label:"Distance",value:`${d} light-years`}],astronomyRecordId:id});
+const mkPlanet=(letter:string,r:number,m:number,a:number,p:number,orbit:number,hz=false):ExoplanetConfig=>{const name=`TRAPPIST-1 ${letter}`,id=`trappist-1-${letter}`;return{id,name,systemName:"TRAPPIST-1",parentStarName:"TRAPPIST-1",radius:r*.18,radiusEarth:r,massEarth:m,semiMajorAxisAu:a,orbitalPeriodDays:p,orbitRadius:orbit,rotationSpeed:.35,color:hz?"#7c9a80":"#8b8178",initialAngle:orbit,registryName:name,navigationRadius:1.3,habitableZone:hz,habitableZoneContext:hz?"Within or near conventional habitable-zone estimates; this does not imply habitability or life.":undefined,planetType:"Terrestrial",discoveryYear:"bcd".includes(letter)?2016:2017,discoveryMethod:"Transit",astronomyRecordId:id,description:`${name} is one of seven confirmed, roughly Earth-sized planets orbiting an ultracool dwarf.`,facts:[{label:"Orbital period",value:`${p} days`},{label:"Radius",value:`${r} Earth radii`},{label:"Semi-major axis",value:`${a} AU`}]}};
+const make=(v:{id:string;name:string;distanceLy:number;l:number;b:number;systemType:string;summary:string;description:string;astronomyRecordId:string;stars:StarConfig[];planets?:ExoplanetConfig[];position?:[number,number,number];binaryStarIds?:readonly [string,string];binaryOrbitSpeed?:number;markerLabelPriority?:number;showLocalBeacon?:boolean}):StarSystemConfig=>{const {l,b,planets=[],position,...x}=v;return{...x,label:x.name,galacticLongitudeDeg:l,galacticLatitudeDeg:b,...coords(x.distanceLy,l,b),position:position??local(x.distanceLy,l,b),distanceLightYears:`${x.distanceLy} ly`,knownPlanets:planets,exoplanets:planets}};
 
-export interface ExoplanetConfig {
-    id: string;
-    name: string;
-    systemName: string;
-    parentStarName: string;
-    radius: number;
-    orbitRadius: number;
-    orbitSpeed: number;
-    rotationSpeed: number;
-    color: string;
-    texturePath?: string;
-    initialAngle: number;
-    registryName: string;
-    navigationRadius: number;
-    habitableZone: boolean;
-    description: string;
-    facts: StarFact[];
-}
-
-export interface StarSystemConfig {
-    id: string;
-    name: string;
-    position: [number, number, number]; // 3D coordinates in ASTRA scene units
-    distanceLightYears: string;
-    label: string;
-    description: string;
-    stars: StarConfig[];
-    exoplanets: ExoplanetConfig[];
-}
-
-export const starSystemsData: Record<string, StarSystemConfig> = {
-    alphaCentauri: {
-        id: "alpha-centauri",
-        name: "Alpha Centauri System",
-        // Positioned ~370 scene units away in deep interstellar space
-        position: [280, 35, -240],
-        distanceLightYears: "4.37 ly",
-        label: "Alpha Centauri System",
-        description:
-            "The closest stellar system to Earth, consisting of a close binary pair of Sun-like stars (Alpha Centauri A & B) gravitationally bound with the outer red dwarf Proxima Centauri.",
-        stars: [
-            {
-                id: "alpha-centauri-a",
-                name: "Alpha Centauri A",
-                systemName: "Alpha Centauri",
-                spectralType: "G2V (Yellow Dwarf)",
-                visualRadius: 1.65,
-                coreColor: "#fffbe8",
-                glowColor: "#ffd166",
-                outerGlowColor: "#ff9f1c",
-                temperature: "5,790 K",
-                luminosity: "1.52 L☉",
-                mass: "1.10 M☉",
-                registryName: "Alpha Centauri A",
-                // Position relative to system barycenter
-                relativePosition: [-4.5, 0, 0],
-                navigationRadius: 4.8,
-                description:
-                    "The primary star of the Alpha Centauri binary pair. A yellow-white G-type main sequence star slightly larger, more massive, and brighter than our Sun.",
-                facts: [
-                    { label: "Spectral Class", value: "G2V Main Sequence" },
-                    { label: "Surface Temp", value: "5,790 K" },
-                    { label: "Luminosity", value: "1.519 Solar" },
-                    { label: "Mass", value: "1.10 Solar Masses" },
-                    { label: "Constellation", value: "Centaurus" },
-                ],
-            },
-            {
-                id: "alpha-centauri-b",
-                name: "Alpha Centauri B",
-                systemName: "Alpha Centauri",
-                spectralType: "K1V (Orange Dwarf)",
-                visualRadius: 1.25,
-                coreColor: "#ffe5b4",
-                glowColor: "#ff9233",
-                outerGlowColor: "#e65100",
-                temperature: "5,260 K",
-                luminosity: "0.50 L☉",
-                mass: "0.91 M☉",
-                registryName: "Alpha Centauri B",
-                // Position relative to system barycenter (opposite A)
-                relativePosition: [4.5, 0, 0],
-                navigationRadius: 4.0,
-                description:
-                    "The companion star to Alpha Centauri A in the central binary. A cooler, orange-hued K-type main sequence star with roughly 90% of the Sun's mass.",
-                facts: [
-                    { label: "Spectral Class", value: "K1V Main Sequence" },
-                    { label: "Surface Temp", value: "5,260 K" },
-                    { label: "Luminosity", value: "0.500 Solar" },
-                    { label: "Mass", value: "0.907 Solar Masses" },
-                    { label: "Orbit Period", value: "79.91 Years" },
-                ],
-            },
-            {
-                id: "proxima-centauri",
-                name: "Proxima Centauri",
-                systemName: "Alpha Centauri",
-                spectralType: "M5.5Ve (Red Dwarf)",
-                visualRadius: 0.65,
-                coreColor: "#ff7b7b",
-                glowColor: "#ff3333",
-                outerGlowColor: "#990000",
-                temperature: "3,042 K",
-                luminosity: "0.0017 L☉",
-                mass: "0.122 M☉",
-                registryName: "Proxima Centauri",
-                // Visually separated within system group by 38 units
-                relativePosition: [28, -6, 26],
-                navigationRadius: 2.8,
-                description:
-                    "The closest known individual star to our Solar System at 4.246 light-years. A small, active low-mass red dwarf star hosting the habitable zone exoplanet Proxima b.",
-                facts: [
-                    { label: "Spectral Class", value: "M5.5Ve Flare Star" },
-                    { label: "Distance", value: "4.246 Light-Years" },
-                    { label: "Surface Temp", value: "3,042 K" },
-                    { label: "Luminosity", value: "0.0017 Solar" },
-                    { label: "Habitable Planets", value: "1 Confirmed (b)" },
-                ],
-            },
-        ],
-        exoplanets: [
-            {
-                id: "proxima-centauri-b",
-                name: "Proxima Centauri b",
-                systemName: "Alpha Centauri",
-                parentStarName: "Proxima Centauri",
-                radius: 0.32,
-                orbitRadius: 2.4,
-                orbitSpeed: 0.65,
-                rotationSpeed: 0.4,
-                color: "#6b7280", // rocky terrestrial appearance
-                texturePath: "/textures/mars/mars.jpg", // fallback high quality rocky planet texture
-                initialAngle: Math.PI * 0.4,
-                registryName: "Proxima Centauri b",
-                navigationRadius: 1.8,
-                habitableZone: true,
-                description:
-                    "An Earth-mass terrestrial exoplanet orbiting within the circumstellar habitable zone of Proxima Centauri every 11.2 Earth days, making it the closest known exoplanet to Earth.",
-                facts: [
-                    { label: "Host Star", value: "Proxima Centauri" },
-                    { label: "Orbital Period", value: "11.186 Days" },
-                    { label: "Semi-Major Axis", value: "0.0485 AU" },
-                    { label: "Minimum Mass", value: "1.07 Earths" },
-                    { label: "Habitable Zone", value: "Optimistic HZ" },
-                    { label: "Discovery", value: "2016 (ESO / HARPS)" },
-                ],
-            },
-        ],
-    },
+const alphaStars=[mkStar("alpha-centauri-a","Alpha Centauri A","Alpha Centauri","G2V",1.65,["#fffbe8","#ffd166","#ff9f1c"],"5,790 K","1.52 L☉","1.10 M☉",[-4.5,0,0],"A Sun-like main-sequence star.",4.37),mkStar("alpha-centauri-b","Alpha Centauri B","Alpha Centauri","K1V",1.25,["#ffe5b4","#ff9233","#e65100"],"5,260 K","0.50 L☉","0.91 M☉",[4.5,0,0],"A cooler K-type companion.",4.37),mkStar("proxima-centauri","Proxima Centauri","Alpha Centauri","M5.5Ve",.65,["#ff7b7b","#ff3333","#990000"],"3,042 K","0.0017 L☉","0.122 M☉",[28,-6,26],"The closest known individual star to the Sun.",4.246)];
+const proximaB:ExoplanetConfig={id:"proxima-centauri-b",name:"Proxima Centauri b",systemName:"Alpha Centauri",parentStarName:"Proxima Centauri",radius:.32,radiusEarth:1.07,massEarth:1.07,semiMajorAxisAu:.0485,orbitalPeriodDays:11.186,orbitRadius:2.4,rotationSpeed:.4,color:"#6b7280",texturePath:"/textures/mars/mars.jpg",initialAngle:1.2,registryName:"Proxima Centauri b",navigationRadius:1.8,habitableZone:true,habitableZoneContext:"An optimistic habitable-zone estimate; this does not establish habitability or life.",planetType:"Terrestrial",discoveryYear:2016,discoveryMethod:"Radial velocity",astronomyRecordId:"proxima-centauri-b",description:"An Earth-mass exoplanet orbiting Proxima Centauri.",facts:[{label:"Orbital period",value:"11.186 days"}]};
+const tp=[mkPlanet("b",1.116,1.374,.01154,1.510826,1.45),mkPlanet("c",1.097,1.308,.0158,2.421937,1.95),mkPlanet("d",.788,.388,.02227,4.049219,2.5),mkPlanet("e",.92,.692,.02925,6.101013,3.1,true),mkPlanet("f",1.045,1.039,.03849,9.20754,3.8,true),mkPlanet("g",1.129,1.321,.04683,12.352446,4.6,true),mkPlanet("h",.755,.326,.06189,18.772866,5.5)];
+export const starSystemsData:Record<string,StarSystemConfig>={
+ alphaCentauri:make({id:"alpha-centauri",name:"Alpha Centauri System",distanceLy:4.37,l:315.78,b:-.68,position:[280,35,-240],systemType:"Triple star system",summary:"The nearest stellar system, with Alpha Centauri A and B plus Proxima Centauri.",description:"The nearest stellar system to Earth.",astronomyRecordId:"alpha-centauri-region-galactic",stars:alphaStars,planets:[proximaB],binaryStarIds:["alpha-centauri-a","alpha-centauri-b"],binaryOrbitSpeed:.04,markerLabelPriority:4,showLocalBeacon:true}),
+ barnardsStar:make({id:"barnards-star-system",name:"Barnard's Star",distanceLy:5.96,l:31.0087,b:14.0627,systemType:"Single red dwarf",summary:"A nearby M4 red dwarf noted for exceptionally high proper motion.",description:"Disputed planet claims are not shown.",astronomyRecordId:"barnards-star",stars:[mkStar("barnards-star","Barnard's Star","Barnard's Star","M4V",.62,["#ff9a80","#e54b3f","#7c1d1d"],"~3,130 K","~0.0035 L☉","~0.144 M☉",[0,0,0],"A nearby red dwarf famous for its high proper motion.",5.96)],markerLabelPriority:1}),
+ sirius:make({id:"sirius-system",name:"Sirius System",distanceLy:8.60,l:227.2303,b:-8.8903,systemType:"Binary star system",summary:"A nearby binary containing Sirius A and white dwarf Sirius B.",description:"The binary orbit is simplified for education.",astronomyRecordId:"sirius",stars:[mkStar("sirius-a","Sirius A","Sirius","A1V",1.8,["#fff","#cce4ff","#78a8ff"],"~9,940 K","~25.4 L☉","~2.02 M☉",[-3.4,0,0],"A hot luminous main-sequence star.",8.6),mkStar("sirius-b","Sirius B","Sirius","DA2 white dwarf",.45,["#f7fbff","#c5dcff","#698fd3"],"~25,000 K","~0.026 L☉","~1.02 M☉",[3.4,0,0],"A dense white-dwarf companion.",8.6)],binaryStarIds:["sirius-a","sirius-b"],binaryOrbitSpeed:.035,markerLabelPriority:1,showLocalBeacon:true}),
+ epsilonEridani:make({id:"epsilon-eridani-system",name:"Epsilon Eridani",distanceLy:10.50,l:195.8446,b:-48.0513,systemType:"Single K-type star",summary:"A nearby K-type star with a debris-disk environment.",description:"Uncertain planet claims are omitted.",astronomyRecordId:"epsilon-eridani",stars:[mkStar("epsilon-eridani","Epsilon Eridani","Epsilon Eridani","K2V",1.05,["#ffe4b5","#ff9b42","#a64818"],"~5,080 K","~0.34 L☉","~0.82 M☉",[0,0,0],"A nearby orange dwarf.",10.5)],markerLabelPriority:1}),
+ tauCeti:make({id:"tau-ceti-system",name:"Tau Ceti",distanceLy:11.91,l:173.1007,b:-73.4397,systemType:"Single G-type star",summary:"A nearby G-type main-sequence star.",description:"Disputed candidate planets are omitted.",astronomyRecordId:"tau-ceti",stars:[mkStar("tau-ceti","Tau Ceti","Tau Ceti","G8V",1.2,["#fff4cf","#ffc862","#db7d20"],"~5,340 K","~0.52 L☉","~0.78 M☉",[0,0,0],"A nearby Sun-like star.",11.91)],markerLabelPriority:1}),
+ trappist1:make({id:"trappist-1-system",name:"TRAPPIST-1",distanceLy:40.7,l:69.7128,b:-56.6446,systemType:"Ultracool dwarf planetary system",summary:"An ultracool dwarf orbited by seven confirmed, roughly Earth-sized planets.",description:"Orbit spacing and body sizes are compressed; motion derives from actual periods.",astronomyRecordId:"trappist-1",stars:[mkStar("trappist-1","TRAPPIST-1","TRAPPIST-1","M8V ultracool dwarf",.6,["#ff8c70","#d84432","#651819"],"~2,566 K","~0.00055 L☉","~0.089 M☉",[0,0,0],"An ultracool dwarf with seven confirmed planets.",40.7)],planets:tp,markerLabelPriority:4,showLocalBeacon:true}),
 };
-
-export const sunStarConfig: StarConfig = {
-    id: "sun",
-    name: "Sun",
-    systemName: "Solar System",
-    spectralType: "G2V (Yellow Dwarf)",
-    visualRadius: 1.5,
-    coreColor: "#fff5c0",
-    glowColor: "#ffb347",
-    outerGlowColor: "#ff6600",
-    temperature: "5,778 K",
-    luminosity: "1.00 L☉",
-    mass: "1.00 M☉",
-    registryName: "Sun",
-    relativePosition: [0, 0, 0],
-    navigationRadius: 4.5,
-    description:
-        "The star at the heart of our Solar System, comprising 99.86% of the system's total mass and providing light and gravitational stability for all orbiting planets.",
-    facts: [
-        { label: "Spectral Class", value: "G2V Main Sequence" },
-        { label: "Surface Temp", value: "5,778 K" },
-        { label: "Luminosity", value: "1.00 Solar (3.828×10²⁶ W)" },
-        { label: "Age", value: "4.6 Billion Years" },
-        { label: "Composition", value: "73% H, 25% He, 2% Metals" },
-    ],
-};
-
-export const starSystemsList: StarSystemConfig[] = Object.values(starSystemsData);
-
-export function getStarSystemById(id: string): StarSystemConfig | undefined {
-    return starSystemsData[id] ?? starSystemsList.find((s) => s.id === id);
-}
-
-export function getStarByName(name: string): StarConfig | undefined {
-    if (name.toLowerCase() === "sun") {
-        return sunStarConfig;
-    }
-    for (const system of starSystemsList) {
-        const star = system.stars.find(
-            (s) =>
-                s.name.toLowerCase() === name.toLowerCase() ||
-                s.registryName.toLowerCase() === name.toLowerCase()
-        );
-        if (star) return star;
-    }
-    return undefined;
-}
-
-export function getExoplanetByName(name: string): ExoplanetConfig | undefined {
-    for (const system of starSystemsList) {
-        const planet = system.exoplanets.find(
-            (p) =>
-                p.name.toLowerCase() === name.toLowerCase() ||
-                p.registryName.toLowerCase() === name.toLowerCase()
-        );
-        if (planet) return planet;
-    }
-    return undefined;
-}
+export const sunStarConfig=mkStar("sun","Sun","Solar System","G2V",1.5,["#fff5c0","#ffb347","#ff6600"],"5,778 K","1.00 L☉","1.00 M☉",[0,0,0],"The star at the heart of the Solar System.",0);
+export const starSystemsList=Object.values(starSystemsData);
+export const STAR_SYSTEM_ENTRY_IDS = {
+    "alpha-centauri": "alpha-centauri",
+    "barnards-star-system": "barnards-star",
+    "sirius-system": "sirius",
+    "epsilon-eridani-system": "epsilon-eridani",
+    "tau-ceti-system": "tau-ceti",
+    "trappist-1-system": "trappist-1",
+} as const;
+export type StarSystemEntryId = (typeof STAR_SYSTEM_ENTRY_IDS)[keyof typeof STAR_SYSTEM_ENTRY_IDS];
+export const getStarSystemEntryId=(system:StarSystemConfig):StarSystemEntryId=>STAR_SYSTEM_ENTRY_IDS[system.id as keyof typeof STAR_SYSTEM_ENTRY_IDS];
+export const getStarSystemByEntryId=(id:StarSystemEntryId|null|undefined)=>id?starSystemsList.find(system=>getStarSystemEntryId(system)===id):undefined;
+export const getStarSystemRegistryName=(id:StarSystemEntryId)=>`Star system: ${id}`;
+export const getStarSystemDisplayName=(system:StarSystemConfig)=>system.name.replace(/\s+System$/i,"");
+export const getStarSystemById=(id:string)=>starSystemsData[id]??starSystemsList.find(s=>s.id===id||s.astronomyRecordId===id||getStarSystemEntryId(s)===id);
+export const getStarByName=(name:string)=>name.toLowerCase()==="sun"?sunStarConfig:starSystemsList.flatMap(s=>s.stars).find(s=>s.name.toLowerCase()===name.toLowerCase());
+export const getExoplanetByName=(name:string)=>starSystemsList.flatMap(s=>s.knownPlanets).find(p=>p.name.toLowerCase()===name.toLowerCase());

@@ -33,7 +33,20 @@
     letter-spacing: 0.04em;
 }
 
-.returnButton {
+.subtitle {
+    margin-top: 3px;
+    color: rgba(214, 243, 255, 0.58);
+    font-size: 9px;
+}
+
+.actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 7px;
+}
+
+.returnButton,
+.neighborhoodButton {
     flex: 0 0 auto;
     border: 1px solid rgba(125, 211, 252, 0.35);
     border-radius: 9px;
@@ -44,6 +57,12 @@
     font-weight: 650;
     letter-spacing: 0.05em;
     cursor: pointer;
+}
+
+.neighborhoodButton {
+    border-color: rgba(167, 139, 250, 0.42);
+    background: rgba(109, 40, 217, 0.16);
+    color: #ede9fe;
 }
 
 .returnButton:hover {
@@ -60,6 +79,11 @@
     }
 
     .returnButton {
+        width: 100%;
+    }
+
+    .actions,
+    .neighborhoodButton {
         width: 100%;
     }
 }

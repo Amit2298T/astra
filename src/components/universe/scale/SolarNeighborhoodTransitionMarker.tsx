@@ -1,13 +1,15 @@
 import * as THREE from "three";
 
-import { SOLAR_SYSTEM_GALACTIC_POSITION } from "@/data/nebulae";
+import type { ScenePosition } from "@/engine/scale/CoordinateTransformer";
 
 interface SolarNeighborhoodTransitionMarkerProps {
     progress: number;
+    localGalacticAnchor: ScenePosition;
 }
 
 export function SolarNeighborhoodTransitionMarker({
     progress,
+    localGalacticAnchor,
 }: SolarNeighborhoodTransitionMarkerProps) {
     const visibility = Math.sin(Math.PI * progress);
     const radius = THREE.MathUtils.lerp(1.45, 6.5, progress);
@@ -15,9 +17,9 @@ export function SolarNeighborhoodTransitionMarker({
     return (
         <group
             position={[
-                SOLAR_SYSTEM_GALACTIC_POSITION[0] * progress,
-                SOLAR_SYSTEM_GALACTIC_POSITION[1] * progress,
-                SOLAR_SYSTEM_GALACTIC_POSITION[2] * progress,
+                localGalacticAnchor[0] * progress,
+                localGalacticAnchor[1] * progress,
+                localGalacticAnchor[2] * progress,
             ]}
         >
             <mesh raycast={() => undefined}>

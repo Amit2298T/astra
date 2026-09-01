@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:solar-motion": "node --test --experimental-strip-types src/engine/astronomy/OrbitalMotion.test.mjs"
+    "test:solar-motion": "node --test --experimental-strip-types src/engine/astronomy/OrbitalMotion.test.mjs",
+    "test:performance-tier": "node --test --experimental-strip-types src/engine/performance/PerformanceTier.test.mjs",
+    "test:star-systems": "node --test --experimental-strip-types src/data/starSystems.test.mjs src/engine/navigation/LocalDestination.test.mjs",
+    "test:stellar-neighborhood": "npm run test:star-systems"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",

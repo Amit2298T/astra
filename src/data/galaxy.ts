@@ -1,6 +1,5 @@
 import {
     GALACTIC_SCENE_SCALE,
-    nearbyGalacticPosition,
     type ScenePosition,
 } from "@/engine/scale/CoordinateTransformer";
 import {
@@ -8,6 +7,7 @@ import {
     SOLAR_SYSTEM_GALACTIC_POSITION,
 } from "@/data/nebulae";
 import { starClusters } from "@/data/starClusters";
+import { getStarSystemEntryId, starSystemsList, type StarSystemEntryId } from "@/data/starSystems";
 
 export type GalacticTargetType =
     | "galacticCenter"
@@ -36,7 +36,12 @@ export interface GalacticNavigationTarget {
     facts: readonly GalacticTargetFact[];
     markerColor?: string;
     markerLabelOffset?: number;
+    markerLabelOffsetX?: number;
+    markerLabelScreenOffset?: readonly [number, number];
+    markerSizeScale?: number;
     localSpaceDestination?: "solarSystem";
+    starSystemId?: StarSystemEntryId;
+    markerLabelPriority?: number;
     distanceFromGalacticCenterLightYears?: number;
 }
 
@@ -52,6 +57,9 @@ export interface GalaxyConfig {
 }
 
 const solarSystemPosition = SOLAR_SYSTEM_GALACTIC_POSITION;
+const nearbySystemLabelOffsets = [
+    [-75, -55], [-90, 25], [90, -50], [115, 15], [35, 70], [-80, 30],
+] as const;
 
 export const milkyWayConfig: GalaxyConfig = {
     id: "milky-way",
@@ -88,6 +96,7 @@ export const milkyWayConfig: GalaxyConfig = {
             navigationName: "Solar System",
             navigationRadius: 900,
             localSpaceDestination: "solarSystem",
+            markerLabelPriority: 5,
             facts: [
                 { label: "Region", value: "Orion Spur / Local Arm" },
                 { label: "From Galactic Center", value: "About 27,000 ly" },
@@ -95,23 +104,30 @@ export const milkyWayConfig: GalaxyConfig = {
             ],
             distanceFromGalacticCenterLightYears: 27000,
         },
-        {
-            id: "alpha-centauri-region-galactic",
-            name: "Alpha Centauri region",
+        ...starSystemsList.map((system, index): GalacticNavigationTarget => ({
+            id: system.astronomyRecordId,
+            name: system.name,
             type: "starSystem",
-            position: nearbyGalacticPosition(solarSystemPosition, [1.4, 0.15, -0.9]),
-            description:
-                "The nearest stellar system; effectively coincident with the Solar System at galactic scale.",
-            markerVisible: false,
-            navigationName: "Alpha Centauri region",
-            navigationRadius: 800,
-            localSpaceDestination: "solarSystem",
+            position: system.galacticMarkerPosition,
+            description: system.summary,
+            markerVisible: true,
+            navigationName: system.name,
+            navigationRadius: 180,
+            starSystemId: getStarSystemEntryId(system),
+            markerLabelPriority: system.id === "sirius-system" ? 4 : Math.max(3, system.markerLabelPriority ?? 0),
+            markerColor: system.id === "sirius-system" ? "#f4fbff" : system.id === "trappist-1-system" ? "#f07b68" : system.id === "barnards-star-system" ? "#c96a5c" : "#ffe2a8",
+            markerSizeScale: system.id === "sirius-system" ? 1.15 : system.id === "barnards-star-system" ? 0.86 : 1,
+            markerLabelOffset: [92, 58, 78, 54, 84, 62][index],
+            markerLabelOffsetX: [-48, 46, 58, -62, 52, -48][index],
+            markerLabelScreenOffset: nearbySystemLabelOffsets[index],
             facts: [
-                { label: "Region", value: "Solar neighborhood" },
-                { label: "Scale", value: "Coincident at galaxy scale" },
+                { label: "System", value: system.systemType },
+                { label: "Distance", value: system.distanceLightYears },
+                { label: "Coordinates", value: `l ${system.galacticLongitudeDeg.toFixed(2)}°, b ${system.galacticLatitudeDeg.toFixed(2)}°` },
+                { label: "Display scale", value: "Nearby offsets magnified equally for readability" },
             ],
             distanceFromGalacticCenterLightYears: 27000,
-        },
+        })),
         ...nebulae.map(
             (nebula, index): GalacticNavigationTarget => ({
                 id: nebula.id,

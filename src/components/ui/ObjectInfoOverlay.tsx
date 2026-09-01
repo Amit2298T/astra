@@ -16,8 +16,10 @@ interface ObjectInfoOverlayProps {
     onStopFollow: () => void;
     onTravel?: () => void;
     onFreeRoam?: () => void;
-    onSolarSystemOverview?: () => void;
-    onCenterOnSun?: () => void;
+    onSystemOverview?: () => void;
+    onCenterOnSystem?: () => void;
+    systemCenterName?: string;
+    systemOverviewLabel?: string;
     onClose?: () => void;
 }
 
@@ -29,8 +31,10 @@ export function ObjectInfoOverlay({
     onStopFollow,
     onTravel,
     onFreeRoam,
-    onSolarSystemOverview,
-    onCenterOnSun,
+    onSystemOverview,
+    onCenterOnSystem,
+    systemCenterName = "Sun",
+    systemOverviewLabel = "Solar System Overview",
     onClose,
 }: ObjectInfoOverlayProps) {
     const isFollowing = mode === "follow";
@@ -588,10 +592,10 @@ export function ObjectInfoOverlay({
                     </button>
                 )}
 
-                {/* 5. Center on Sun (Explicit Sun Focus) */}
-                {target.name.toLowerCase() !== "sun" && (
+                {/* 5. Center on the active local system anchor. */}
+                {target.name.toLowerCase() !== systemCenterName.toLowerCase() && (
                     <button
-                        onClick={onCenterOnSun}
+                        onClick={onCenterOnSystem}
                         style={{
                             background: "rgba(255, 255, 255, 0.08)",
                             border: "1px solid rgba(255, 255, 255, 0.15)",
@@ -615,13 +619,13 @@ export function ObjectInfoOverlay({
                             el.style.borderColor = "rgba(255, 255, 255, 0.15)";
                         }}
                     >
-                        Center on Sun
+                        Center on {systemCenterName}
                     </button>
                 )}
 
-                {/* 6. Solar System Overview */}
+                {/* 6. Active local system overview */}
                 <button
-                    onClick={onSolarSystemOverview}
+                    onClick={onSystemOverview}
                     style={{
                         background: "rgba(255, 255, 255, 0.08)",
                         border: "1px solid rgba(255, 255, 255, 0.15)",
@@ -645,7 +649,7 @@ export function ObjectInfoOverlay({
                         el.style.borderColor = "rgba(255, 255, 255, 0.15)";
                     }}
                 >
-                    Solar System Overview
+                    {systemOverviewLabel}
                 </button>
             </div>
         </div>

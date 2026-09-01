@@ -8,12 +8,16 @@ import type { ExoplanetConfig } from "@/data/starSystems";
 import type { SelectedObject } from "@/engine/camera/types";
 import { sceneRegistry } from "@/engine/registry/SceneRegistry";
 import { DistanceFadedLabel } from "../DistanceFadedLabel";
+import { getOrbitalAngularVelocity } from "@/engine/astronomy/OrbitalMotion";
 
 interface ExoplanetProps {
     config: ExoplanetConfig;
     parentOffset?: [number, number, number];
     showLabel?: boolean;
     registerNavigationTarget?: boolean;
+    labelOffset?: [number, number, number];
+    labelMaxDistance?: number;
+    labelPriority?: "selected" | "secondary";
     onSelect?: (object: SelectedObject) => void;
     onFocus?: (object: SelectedObject) => void;
 }
@@ -23,6 +27,9 @@ export function Exoplanet({
     parentOffset = [0, 0, 0],
     showLabel = true,
     registerNavigationTarget = true,
+    labelOffset,
+    labelMaxDistance,
+    labelPriority,
     onSelect,
     onFocus,
 }: ExoplanetProps) {
@@ -35,12 +42,13 @@ export function Exoplanet({
         name,
         radius,
         orbitRadius,
-        orbitSpeed,
+        orbitalPeriodDays,
         rotationSpeed,
         color,
         initialAngle,
         registryName,
     } = config;
+    const orbitalAngularVelocity = getOrbitalAngularVelocity(orbitalPeriodDays);
 
     // Register exoplanet in sceneRegistry for camera targeting
     useEffect(() => {
@@ -59,7 +67,7 @@ export function Exoplanet({
     useFrame(({ clock }) => {
         if (!groupRef.current || !meshRef.current) return;
         const t = clock.getElapsedTime();
-        const angle = initialAngle + t * orbitSpeed;
+        const angle = initialAngle + t * orbitalAngularVelocity;
 
         groupRef.current.position.x =
             parentOffset[0] + Math.cos(angle) * orbitRadius;
@@ -167,19 +175,35 @@ export function Exoplanet({
                 {showLabel && (
                     <DistanceFadedLabel
                         targetName={name}
-                        position={[0, radius + 0.35, 0]}
+                        position={labelOffset ?? [0, radius + 0.35, 0]}
                         distanceFactor={12}
+                        maxVisibleDistance={labelMaxDistance}
+                        forceVisible={labelPriority === "selected"}
                     >
                         <span
                             style={{
                                 color: "#cbd5e1",
-                                fontSize: "11px",
+                                fontSize:
+                                    labelPriority === "selected"
+                                        ? "12px"
+                                        : labelPriority === "secondary"
+                                          ? "9.5px"
+                                          : "11px",
                                 fontFamily: "Inter, system-ui, sans-serif",
-                                fontWeight: 500,
+                                fontWeight:
+                                    labelPriority === "selected" ? 700 : 500,
                                 letterSpacing: "0.05em",
                                 textTransform: "uppercase",
-                                opacity: 0.85,
-                                textShadow: "0 0 6px rgba(0,0,0,0.9)",
+                                opacity:
+                                    labelPriority === "selected"
+                                        ? 1
+                                        : labelPriority === "secondary"
+                                          ? 0.68
+                                          : 0.85,
+                                textShadow:
+                                    labelPriority === "selected"
+                                        ? "0 0 9px rgba(125, 211, 252, 0.9), 0 0 6px rgba(0,0,0,1)"
+                                        : "0 0 6px rgba(0,0,0,0.9)",
                                 userSelect: "none",
                                 whiteSpace: "nowrap",
                             }}

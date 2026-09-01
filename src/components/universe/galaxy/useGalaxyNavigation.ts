@@ -10,6 +10,7 @@ import { galacticRegistry } from "@/engine/registry/GalacticRegistry";
 
 export type GalaxyNavigationMode =
     | "overview"
+    | "neighborhood"
     | "focus"
     | "travel"
     | "blackHole"
@@ -54,6 +55,14 @@ export function useGalaxyNavigation() {
         setSelectedTarget(target);
         setActiveTarget(target);
         setMode("focus");
+        setFocusRequestId((requestId) => requestId + 1);
+    }, []);
+
+    const enterNeighborhood = useCallback(() => {
+        galaxyTravelManager.cancelTravel();
+        setSelectedTarget(null);
+        setActiveTarget(null);
+        setMode("neighborhood");
         setFocusRequestId((requestId) => requestId + 1);
     }, []);
 
@@ -172,6 +181,7 @@ export function useGalaxyNavigation() {
         clearSelection,
         focusSelected,
         focusTarget,
+        enterNeighborhood,
         travelToSelected,
         completeArrival,
         enterBlackHole,

@@ -1,6 +1,12 @@
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+
+import {
+    PERFORMANCE_PROFILES,
+    scaledCount,
+    type PerformanceTier,
+} from "@/engine/performance/PerformanceTier";
 
 interface StarLayerData {
     positions: Float32Array;
@@ -94,23 +100,39 @@ const prominentStars = createStarLayer({
     seed: 0xc2b2ae35,
 });
 
+export const LOCAL_STAR_FIELD_POINT_COUNTS = {
+    distant: distantStars.positions.length / 3,
+    medium: mediumStars.positions.length / 3,
+    prominent: prominentStars.positions.length / 3,
+} as const;
+
 interface StarPointsProps {
     data: StarLayerData;
+    count: number;
     size: number;
     opacity: number;
 }
 
-function StarPoints({ data, size, opacity }: StarPointsProps) {
+function StarPoints({ data, count, size, opacity }: StarPointsProps) {
+    const positions = useMemo(
+        () => data.positions.subarray(0, count * 3),
+        [count, data.positions]
+    );
+    const colors = useMemo(
+        () => data.colors.subarray(0, count * 3),
+        [count, data.colors]
+    );
+
     return (
         <points frustumCulled={false}>
             <bufferGeometry>
                 <bufferAttribute
                     attach="attributes-position"
-                    args={[data.positions, 3]}
+                    args={[positions, 3]}
                 />
                 <bufferAttribute
                     attach="attributes-color"
-                    args={[data.colors, 3]}
+                    args={[colors, 3]}
                 />
             </bufferGeometry>
             <pointsMaterial
@@ -128,12 +150,17 @@ function StarPoints({ data, size, opacity }: StarPointsProps) {
 
 interface StarFieldProps {
     opacityScale?: number;
+    performanceTier?: PerformanceTier;
 }
 
-export function StarField({ opacityScale = 1 }: StarFieldProps) {
+export function StarField({
+    opacityScale = 1,
+    performanceTier = "high",
+}: StarFieldProps) {
     const fieldRef = useRef<THREE.Group>(null);
     const mediumRef = useRef<THREE.Group>(null);
     const prominentRef = useRef<THREE.Group>(null);
+    const qualityScale = PERFORMANCE_PROFILES[performanceTier].starFieldScale;
 
     useFrame(({ camera }, delta) => {
         if (fieldRef.current) {
@@ -151,12 +178,20 @@ export function StarField({ opacityScale = 1 }: StarFieldProps) {
         <group ref={fieldRef}>
             <StarPoints
                 data={distantStars}
+                count={scaledCount(
+                    LOCAL_STAR_FIELD_POINT_COUNTS.distant,
+                    qualityScale
+                )}
                 size={0.62}
                 opacity={0.58 * opacityScale}
             />
             <group ref={mediumRef}>
                 <StarPoints
                     data={mediumStars}
+                    count={scaledCount(
+                        LOCAL_STAR_FIELD_POINT_COUNTS.medium,
+                        qualityScale
+                    )}
                     size={0.92}
                     opacity={0.72 * opacityScale}
                 />
@@ -164,6 +199,10 @@ export function StarField({ opacityScale = 1 }: StarFieldProps) {
             <group ref={prominentRef}>
                 <StarPoints
                     data={prominentStars}
+                    count={scaledCount(
+                        LOCAL_STAR_FIELD_POINT_COUNTS.prominent,
+                        qualityScale
+                    )}
                     size={1.35}
                     opacity={0.82 * opacityScale}
                 />

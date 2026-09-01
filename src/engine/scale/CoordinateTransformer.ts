@@ -75,3 +75,18 @@ export function nearbyGalacticPosition(
         origin[2] + offset[2],
     ];
 }
+
+/** Uniform visual magnification for sub-pixel nearby-star offsets. */
+export const NEARBY_STAR_DISPLAY_MAGNIFICATION = 600;
+
+export function magnifyNearbyGalacticOffset(
+    solarSystemPosition: ScenePosition,
+    scientificPosition: ScenePosition,
+    magnification = NEARBY_STAR_DISPLAY_MAGNIFICATION
+): ScenePosition {
+    return [
+        solarSystemPosition[0] + (scientificPosition[0] - solarSystemPosition[0]) * magnification,
+        solarSystemPosition[1] + (scientificPosition[1] - solarSystemPosition[1]) * magnification,
+        solarSystemPosition[2] + (scientificPosition[2] - solarSystemPosition[2]) * magnification,
+    ];
+}

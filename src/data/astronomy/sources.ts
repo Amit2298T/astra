@@ -1,6 +1,6 @@
 import type { SourceReference } from "./types";
 
-const ACCESSED_AT = "2026-08-30";
+const ACCESSED_AT = "2026-08-31";
 
 function reference(
     label: string,
@@ -11,6 +11,11 @@ function reference(
 }
 
 export const astronomySources = {
+    barnardsStar: reference("Barnard's Star", "SIMBAD / CDS", "https://simbad.cds.unistra.fr/simbad/sim-basic?Ident=Barnard%27s+Star"),
+    sirius: reference("Sirius", "SIMBAD / CDS", "https://simbad.cds.unistra.fr/simbad/sim-basic?Ident=Sirius"),
+    epsilonEridani: reference("Epsilon Eridani", "SIMBAD / CDS", "https://simbad.cds.unistra.fr/simbad/sim-basic?Ident=Epsilon+Eridani"),
+    tauCeti: reference("Tau Ceti", "SIMBAD / CDS", "https://simbad.cds.unistra.fr/simbad/sim-basic?Ident=Tau+Ceti"),
+    trappist1: reference("TRAPPIST-1 system", "NASA Exoplanet Archive", "https://exoplanetarchive.ipac.caltech.edu/overview/TRAPPIST-1"),
     planets: reference(
         "Solar System planets",
         "NASA Science",

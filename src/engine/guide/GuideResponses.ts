@@ -39,6 +39,9 @@ function actionsForObject(id: string): readonly GuideAction[] {
     } else if (id === "galactic-center") {
         actions.push({ label: "View Galactic Center", href: explorerHref("sagittarius-a"), tone: "primary" });
     }
+    const systemTargets = {"epsilon-eridani":"epsilon-eridani","tau-ceti":"tau-ceti","trappist-1":"trappist-1","barnards-star":"barnards-star","sirius":"sirius"} as const;
+    const systemTarget = systemTargets[id as keyof typeof systemTargets];
+    if (!comparable?.explorerTarget && systemTarget) actions.push({label:"View in Explorer",href:explorerHref(systemTarget),tone:"primary"});
     if (id === "voyager-1") {
         actions.push({ label: "Open Mission Control", href: "/mission-control", tone: "secondary" });
     }

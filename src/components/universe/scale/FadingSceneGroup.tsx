@@ -29,12 +29,15 @@ export function FadingSceneGroup({
     const groupRef = useRef<THREE.Group>(null);
     const materialsRef = useRef(new Map<THREE.Material, MaterialSnapshot>());
     const lightsRef = useRef(new Map<THREE.Light, number>());
+    const appliedOpacityRef = useRef(-1);
 
     useFrame(() => {
         const group = groupRef.current;
         if (!group) return;
 
         const layerOpacity = THREE.MathUtils.clamp(opacity, 0, 1);
+        if (Math.abs(layerOpacity - appliedOpacityRef.current) < 0.001) return;
+        appliedOpacityRef.current = layerOpacity;
         group.visible = layerOpacity > 0.002;
         group.traverse((object) => {
             if (object instanceof THREE.Light) {

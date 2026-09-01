@@ -2,6 +2,11 @@ import { useMemo } from "react";
 
 import type { SmallBodyRegionConfig } from "@/data/smallBodyRegions";
 import { createSeededRandom, randomNormal } from "@/engine/math/seededRandom";
+import {
+    PERFORMANCE_PROFILES,
+    scaledCount,
+    type PerformanceTier,
+} from "@/engine/performance/PerformanceTier";
 
 interface BeltPopulation {
     positions: Float32Array;
@@ -93,22 +98,30 @@ function BeltPoints({ population, size, opacity }: BeltPointsProps) {
 
 interface SmallBodyBeltProps {
     config: SmallBodyRegionConfig;
+    performanceTier?: PerformanceTier;
 }
 
-export function SmallBodyBelt({ config }: SmallBodyBeltProps) {
+export function SmallBodyBelt({
+    config,
+    performanceTier = "high",
+}: SmallBodyBeltProps) {
+    const particleCount = scaledCount(
+        config.particleCount,
+        PERFORMANCE_PROFILES[performanceTier].beltScale
+    );
     const prominentCount = Math.round(
-        config.particleCount * config.prominentFraction
+        particleCount * config.prominentFraction
     );
     const populations = useMemo(
         () => ({
             base: createPopulation(
                 config,
-                config.particleCount - prominentCount,
+                particleCount - prominentCount,
                 0x68bc21eb
             ),
             prominent: createPopulation(config, prominentCount, 0x02e5be93),
         }),
-        [config, prominentCount]
+        [config, particleCount, prominentCount]
     );
 
     return (

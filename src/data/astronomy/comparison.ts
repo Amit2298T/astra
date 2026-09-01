@@ -236,6 +236,18 @@ const definitions: readonly ComparisonDefinition[] = [
         },
     },
     {
+        astronomyRecordId: "sirius-a", visualKind: "star", explorerTarget: "sirius",
+        values: { diameter:value(2_380_000,"km","About 2.38 million km"), mass:value(2.02*SOLAR_MASS_KG,"kg","About 2.02 solar masses"), temperature:value(9_940,"K","About 9,940 K"), distanceFromEarth:value(8.6,"ly","About 8.6 light-years") },
+    },
+    {
+        astronomyRecordId: "barnards-star", visualKind: "redDwarf", explorerTarget: "barnards-star",
+        values: { diameter:value(273_000,"km","About 273,000 km"), mass:value(.144*SOLAR_MASS_KG,"kg","About 0.144 solar masses"), temperature:value(3_130,"K","About 3,130 K"), distanceFromEarth:value(5.96,"ly","About 5.96 light-years") },
+    },
+    {
+        astronomyRecordId: "trappist-1-e", visualKind: "exoplanet", explorerTarget: "trappist-1",
+        values: { diameter:value(11_723,"km","About 11,723 km"), mass:value(.692*EARTH_MASS_KG,"kg","About 0.692 Earth masses"), orbitalDistance:value(.02925,"AU","0.02925 AU"), orbitalPeriod:value(6.101013,"days","About 6.10 days"), distanceFromEarth:value(40.7,"ly","About 40.7 light-years") },
+    },
+    {
         astronomyRecordId: "sagittarius-a-star", visualKind: "blackHole", explorerTarget: "sagittarius-a",
         values: {
             diameter: value(23_600_000, "km", "About 24 million km", "Approximate event-horizon diameter; not the accretion flow"),
@@ -320,6 +332,7 @@ export function formatComparisonObjectType(type: ComparisonObject["objectType"])
         moon: "Moon",
         dwarfPlanet: "Dwarf Planet",
         star: "Star",
+        starSystem: "Star System",
         spacecraft: "Spacecraft",
         exoplanet: "Exoplanet",
         blackHole: "Black Hole",

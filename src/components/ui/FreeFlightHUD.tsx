@@ -10,15 +10,17 @@ import type { NavigationData } from "@/engine/navigation/SpeedManager";
 import styles from "./FreeFlightHUD.module.css";
 
 interface FreeFlightHUDProps {
-    onSolarSystemOverview?: () => void;
+    onSystemOverview?: () => void;
     onReturnToSystem?: () => void;
     onEnterGalaxyView?: () => void;
+    systemOverviewLabel?: string;
 }
 
 export function FreeFlightHUD({
-    onSolarSystemOverview,
+    onSystemOverview,
     onReturnToSystem,
     onEnterGalaxyView,
+    systemOverviewLabel = "Solar System Overview",
 }: FreeFlightHUDProps) {
     const [isLocked, setIsLocked] = useState(false);
     const [navData, setNavData] = useState<NavigationData>(() =>
@@ -271,7 +273,7 @@ export function FreeFlightHUD({
             )}
 
             <button
-                onClick={onSolarSystemOverview ?? onReturnToSystem}
+                onClick={onSystemOverview ?? onReturnToSystem}
                 style={{
                     width: "100%",
                     background: "rgba(255, 255, 255, 0.08)",
@@ -296,7 +298,7 @@ export function FreeFlightHUD({
                     el.style.borderColor = "rgba(255, 255, 255, 0.15)";
                 }}
             >
-                Solar System Overview
+                {systemOverviewLabel}
             </button>
 
             <button

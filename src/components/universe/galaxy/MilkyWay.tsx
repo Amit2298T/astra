@@ -1,5 +1,5 @@
-import { useMemo } from "react";
 import * as THREE from "three";
+import { Html } from "@react-three/drei";
 
 import { milkyWayConfig } from "@/data/galaxy";
 import { createSeededRandom, randomNormal } from "@/engine/math/seededRandom";
@@ -7,6 +7,11 @@ import { GalacticMarker } from "./GalacticMarker";
 import type { GalacticNavigationTarget } from "@/data/galaxy";
 import { SOLAR_SYSTEM_GALACTIC_POSITION } from "@/data/nebulae";
 import { smoothRange } from "@/engine/scale/ScaleTransition";
+import {
+    PERFORMANCE_PROFILES,
+    scaledCount,
+    type PerformanceTier,
+} from "@/engine/performance/PerformanceTier";
 
 interface ParticlePopulation {
     positions: Float32Array;
@@ -46,6 +51,23 @@ function createCircularPointTexture(): THREE.DataTexture {
 
 const circularPointTexture = createCircularPointTexture();
 
+function LocalNeighborhoodCue({ opacity }: { opacity: number }) {
+    return (
+        <group position={SOLAR_SYSTEM_GALACTIC_POSITION}>
+            <mesh rotation-x={Math.PI / 2} raycast={() => undefined}>
+                <ringGeometry args={[405, 408, 96]} />
+                <meshBasicMaterial color="#83d9ff" transparent opacity={0.16 * opacity} depthWrite={false} side={THREE.DoubleSide} toneMapped={false} />
+            </mesh>
+            <Html center position={[0, 32, 420]} distanceFactor={3200} style={{ pointerEvents: "none" }}>
+                <div style={{ color: "#b9eaff", opacity, fontFamily: "Inter, system-ui, sans-serif", fontSize: 10, fontWeight: 650, letterSpacing: "0.1em", textAlign: "center", textTransform: "uppercase", whiteSpace: "nowrap", textShadow: "0 2px 10px #000" }}>
+                    Local stellar neighborhood
+                    <div style={{ color: "#8aa5b4", fontSize: 8, fontWeight: 500, letterSpacing: "0.04em", marginTop: 3, textTransform: "none" }}>Nearby-star spacing magnified for readability</div>
+                </div>
+            </Html>
+        </group>
+    );
+}
+
 function setParticle(
     positions: Float32Array,
     colors: Float32Array,
@@ -65,13 +87,13 @@ function setParticle(
     colors[offset + 2] = color.b * brightness;
 }
 
-function createBulge(): ParticlePopulation {
-    const positions = new Float32Array(BULGE_COUNT * 3);
-    const colors = new Float32Array(BULGE_COUNT * 3);
+function createBulge(count: number): ParticlePopulation {
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
     const random = createSeededRandom(0x83d2e7ab);
     const warm = new THREE.Color("#efb878");
 
-    for (let index = 0; index < BULGE_COUNT; index++) {
+    for (let index = 0; index < count; index++) {
         const radius = Math.pow(random(), 2.05) * 500;
         const azimuth = random() * Math.PI * 2;
         const elevation = Math.asin(random() * 2 - 1);
@@ -92,15 +114,15 @@ function createBulge(): ParticlePopulation {
     return { positions, colors };
 }
 
-function createDisk(): ParticlePopulation {
-    const positions = new Float32Array(DISK_COUNT * 3);
-    const colors = new Float32Array(DISK_COUNT * 3);
+function createDisk(count: number): ParticlePopulation {
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
     const random = createSeededRandom(0xa341316c);
     const inner = new THREE.Color("#f1d0ac");
     const outer = new THREE.Color("#8eb9dc");
     const color = new THREE.Color();
 
-    for (let index = 0; index < DISK_COUNT; index++) {
+    for (let index = 0; index < count; index++) {
         const isArmStar = random() < 0.86;
         const normalizedRadius = isArmStar
             ? 0.12 + Math.pow(random(), 0.72) * 0.88
@@ -147,13 +169,13 @@ function createDisk(): ParticlePopulation {
     return { positions, colors };
 }
 
-function createDust(): ParticlePopulation {
-    const positions = new Float32Array(DUST_COUNT * 3);
-    const colors = new Float32Array(DUST_COUNT * 3);
+function createDust(count: number): ParticlePopulation {
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
     const random = createSeededRandom(0xc8013ea4);
     const dust = new THREE.Color("#120e18");
 
-    for (let index = 0; index < DUST_COUNT; index++) {
+    for (let index = 0; index < count; index++) {
         const normalizedRadius = 0.18 + Math.pow(random(), 0.8) * 0.77;
         const radius = normalizedRadius * milkyWayConfig.radius;
         const arm = Math.floor(random() * milkyWayConfig.armCount);
@@ -222,6 +244,31 @@ interface MilkyWayProps {
     onSelectTarget?: (target: GalacticNavigationTarget) => void;
     opacityScale?: number;
     scaleProgress?: number;
+    showNeighborhoodLabels?: boolean;
+    showNeighborhoodCue?: boolean;
+    performanceTier?: PerformanceTier;
+}
+
+interface MilkyWayPopulations {
+    bulge: ParticlePopulation;
+    disk: ParticlePopulation;
+    dust: ParticlePopulation;
+}
+
+const populationCache = new Map<PerformanceTier, MilkyWayPopulations>();
+
+function getPopulations(tier: PerformanceTier): MilkyWayPopulations {
+    const cached = populationCache.get(tier);
+    if (cached) return cached;
+
+    const scale = PERFORMANCE_PROFILES[tier].galaxyScale;
+    const populations = {
+        bulge: createBulge(scaledCount(BULGE_COUNT, scale)),
+        disk: createDisk(scaledCount(DISK_COUNT, scale)),
+        dust: createDust(scaledCount(DUST_COUNT, scale)),
+    };
+    populationCache.set(tier, populations);
+    return populations;
 }
 
 export function MilkyWay({
@@ -231,11 +278,11 @@ export function MilkyWay({
     onSelectTarget,
     opacityScale = 1,
     scaleProgress = 1,
+    showNeighborhoodLabels = false,
+    showNeighborhoodCue = true,
+    performanceTier = "high",
 }: MilkyWayProps) {
-    const populations = useMemo(
-        () => ({ bulge: createBulge(), disk: createDisk(), dust: createDust() }),
-        []
-    );
+    const populations = getPopulations(performanceTier);
 
     const markerOpacity = opacityScale * smoothRange(scaleProgress, 0.76, 0.96);
     const anchorOffset = 1 - scaleProgress;
@@ -266,6 +313,7 @@ export function MilkyWay({
                     blending={THREE.NormalBlending}
                 />
             </group>
+            {showNeighborhoodCue && <LocalNeighborhoodCue opacity={markerOpacity} />}
             {milkyWayConfig.locations.map((location) => (
                 <GalacticMarker
                     key={location.id}
@@ -276,6 +324,8 @@ export function MilkyWay({
                     }
                     onSelect={onSelectTarget}
                     opacityScale={markerOpacity}
+                    revealNearbyLabels={showNeighborhoodLabels}
+                    performanceTier={performanceTier}
                 />
             ))}
         </group>

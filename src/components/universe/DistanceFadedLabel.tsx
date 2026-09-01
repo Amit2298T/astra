@@ -13,6 +13,8 @@ interface DistanceFadedLabelProps {
     targetName: string;
     position: [number, number, number];
     distanceFactor: number;
+    maxVisibleDistance?: number;
+    forceVisible?: boolean;
     children: ReactNode;
 }
 
@@ -22,29 +24,44 @@ export function DistanceFadedLabel({
     targetName,
     position,
     distanceFactor,
+    maxVisibleDistance,
+    forceVisible = false,
     children,
 }: DistanceFadedLabelProps) {
     const anchorRef = useRef<THREE.Group>(null);
     const elementRef = useRef<HTMLDivElement>(null);
     const previousOpacityRef = useRef(-1);
+    const frameRef = useRef(0);
     const layerOpacity = useSceneLayerOpacity();
     const focusRadius = getFocusRadius(targetName);
     const hideWithin = focusRadius * 1.3;
     const fullyVisibleBeyond = focusRadius * 2.1;
 
     useFrame(({ camera }) => {
+        frameRef.current = (frameRef.current + 1) % 3;
+        if (frameRef.current !== 0) return;
         const anchor = anchorRef.current;
         const element = elementRef.current;
         if (!anchor || !element) return;
 
         anchor.getWorldPosition(labelWorldPosition);
         const distance = camera.position.distanceTo(labelWorldPosition);
-        const opacity =
-            THREE.MathUtils.smoothstep(
-                distance,
-                hideWithin,
-                fullyVisibleBeyond
-            ) * layerOpacity;
+        const nearOpacity = forceVisible
+            ? 1
+            : THREE.MathUtils.smoothstep(
+                  distance,
+                  hideWithin,
+                  fullyVisibleBeyond
+              );
+        const farOpacity = maxVisibleDistance
+            ? 1 -
+              THREE.MathUtils.smoothstep(
+                  distance,
+                  maxVisibleDistance * 0.78,
+                  maxVisibleDistance
+              )
+            : 1;
+        const opacity = nearOpacity * farOpacity * layerOpacity;
 
         if (Math.abs(opacity - previousOpacityRef.current) > 0.01) {
             element.style.opacity = opacity.toFixed(2);

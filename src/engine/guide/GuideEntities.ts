@@ -16,6 +16,7 @@ const explicitAliases: Readonly<Record<string, readonly string[]>> = {
     "47-tucanae": ["47 tucanae", "47 tuc"],
     "solar-system-galactic": ["solar system"],
     "alpha-centauri-region-galactic": ["alpha centauri", "alpha centauri system"],
+    "sirius": ["sirius", "sirius system"],
 };
 
 function containsPhrase(text: string, phrase: string) {

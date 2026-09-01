@@ -5,7 +5,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
-import { SOLAR_SYSTEM_GALACTIC_POSITION } from "@/data/nebulae";
+import type { ScenePosition } from "@/engine/scale/CoordinateTransformer";
 import {
     GALAXY_LOCAL_ENTRY_ARM_DISTANCE,
     GALAXY_LOCAL_ENTRY_DISTANCE,
@@ -31,6 +31,7 @@ interface ScaleTransitionControllerProps {
     onLocalZoomProgress: (progress: number) => void;
     onCompleteOut: () => void;
     onCompleteIn: () => void;
+    localGalacticAnchor: ScenePosition;
 }
 
 const startCameraPosition = new THREE.Vector3();
@@ -84,6 +85,7 @@ export function ScaleTransitionController({
     onLocalZoomProgress,
     onCompleteOut,
     onCompleteIn,
+    localGalacticAnchor,
 }: ScaleTransitionControllerProps) {
     const { camera, size } = useThree();
     const elapsedRef = useRef(0);
@@ -228,7 +230,7 @@ export function ScaleTransitionController({
         camera.position.copy(cameraPathPosition);
 
         transitionAnchorTarget
-            .set(...SOLAR_SYSTEM_GALACTIC_POSITION)
+            .set(...localGalacticAnchor)
             .multiplyScalar(scaleProgress);
         if (phase === "transitioningOut") {
             controls.target

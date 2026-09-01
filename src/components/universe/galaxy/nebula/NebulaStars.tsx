@@ -3,9 +3,15 @@ import * as THREE from "three";
 
 import type { NebulaConfig } from "@/data/nebulae";
 import { createSeededRandom } from "@/engine/math/seededRandom";
+import {
+    PERFORMANCE_PROFILES,
+    scaledCount,
+    type PerformanceTier,
+} from "@/engine/performance/PerformanceTier";
 
 interface NebulaStarsProps {
     config: NebulaConfig;
+    performanceTier: PerformanceTier;
 }
 
 const starVertexShader = /* glsl */ `
@@ -32,8 +38,7 @@ const starFragmentShader = /* glsl */ `
     }
 `;
 
-function createEmbeddedStars(config: NebulaConfig) {
-    const count = config.visual.embeddedStarCount;
+function createEmbeddedStars(config: NebulaConfig, count: number) {
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
     const sizes = new Float32Array(count);
@@ -65,8 +70,15 @@ function createEmbeddedStars(config: NebulaConfig) {
     return { positions, colors, sizes };
 }
 
-export function NebulaStars({ config }: NebulaStarsProps) {
-    const population = useMemo(() => createEmbeddedStars(config), [config]);
+export function NebulaStars({ config, performanceTier }: NebulaStarsProps) {
+    const count = scaledCount(
+        config.visual.embeddedStarCount,
+        PERFORMANCE_PROFILES[performanceTier].nebulaScale
+    );
+    const population = useMemo(
+        () => createEmbeddedStars(config, count),
+        [config, count]
+    );
     const isHelix = config.visual.preset === "expandingShell";
 
     return (

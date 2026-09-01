@@ -1,21 +1,32 @@
 "use client";
 
-import { useThree } from "@react-three/fiber";
-
 import type { StarClusterConfig } from "@/data/starClusters";
+import {
+    PERFORMANCE_PROFILES,
+    scaledCount,
+    type PerformanceTier,
+} from "@/engine/performance/PerformanceTier";
 import { GlobularCluster } from "./GlobularCluster";
 import { MassiveYoungCluster } from "./MassiveYoungCluster";
 import { OpenCluster } from "./OpenCluster";
 
 interface StarClusterSceneProps {
     config: StarClusterConfig;
+    performanceTier: PerformanceTier;
 }
 
-export function StarClusterScene({ config }: StarClusterSceneProps) {
-    const compact = useThree((state) => state.size.width < 720);
-    const starCount = compact
-        ? config.visual.mobileStarCount
-        : config.visual.desktopStarCount;
+export function StarClusterScene({
+    config,
+    performanceTier,
+}: StarClusterSceneProps) {
+    const baseCount =
+        performanceTier === "low"
+            ? config.visual.mobileStarCount
+            : config.visual.desktopStarCount;
+    const starCount = scaledCount(
+        baseCount,
+        PERFORMANCE_PROFILES[performanceTier].clusterScale
+    );
 
     switch (config.clusterType) {
         case "openCluster":
