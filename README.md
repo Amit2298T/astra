@@ -40,6 +40,8 @@ ASTRA uses time-based orbital state rather than frame-count animation. Keplerian
 
 The Earth/Moon scene handles the Moon as a moving child body and points the same lunar hemisphere toward Earth. Rotation and revolution are derived from the shared simulation time, avoiding frame-rate-dependent drift. The visualization is educational: distances, radii, and time are compressed so motion remains readable at browser scale.
 
+The Asteroid Belt and Kuiper Belt combine point populations with a deterministic sample of irregular instanced bodies. Individual bodies are procedurally sampled for visualization; population, sizes and spacing are compressed for readability.
+
 ## Astronomy Data & Sources
 
 Scientific values live in typed static modules under `src/data/astronomy/`, with human-readable attribution exposed through the Sources interface. The project draws on authoritative public references including NASA, JPL, ESA, the IAU, and mission-specific public datasets.

@@ -4,6 +4,7 @@ import type { CameraMode, SelectedObject } from "@/engine/camera/types";
 import { getSpacecraftByName } from "@/data/spacecraft";
 import { getStarByName, getExoplanetByName } from "@/data/starSystems";
 import { getDwarfPlanetByName } from "@/data/dwarfPlanets";
+import { smallBodyRegions } from "@/data/smallBodyRegions";
 import { resolveAstronomyRecord } from "@/data/astronomy";
 import { AstronomyRecordDetails } from "./AstronomyRecordDetails";
 import styles from "./ObjectInfoOverlay.module.css";
@@ -56,6 +57,12 @@ export function ObjectInfoOverlay({
             ? getDwarfPlanetByName(target.name)
             : undefined;
     const astronomyRecord = resolveAstronomyRecord(target.id, target.name);
+    const beltVisualizationNote =
+        dwarfPlanet?.region === "Main Asteroid Belt"
+            ? smallBodyRegions.asteroidBelt.visualizationNote
+            : dwarfPlanet?.region === "Kuiper Belt"
+              ? smallBodyRegions.kuiperBelt.visualizationNote
+              : undefined;
 
     // Subtitle categorization
     let subtitle = astronomyRecord
@@ -264,6 +271,18 @@ export function ObjectInfoOverlay({
 
             {astronomyRecord && (
                 <AstronomyRecordDetails record={astronomyRecord} />
+            )}
+
+            {beltVisualizationNote && (
+                <div
+                    style={{
+                        fontSize: 10,
+                        lineHeight: 1.45,
+                        color: "rgba(255, 255, 255, 0.52)",
+                    }}
+                >
+                    {beltVisualizationNote}
+                </div>
             )}
 
             {/* Legacy fallbacks for objects not yet present in the astronomy registry. */}

@@ -5,9 +5,14 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
 const SceneLayerOpacityContext = createContext(1);
+const SceneMaterialOpacityContext = createContext(1);
 
 export function useSceneLayerOpacity(): number {
     return useContext(SceneLayerOpacityContext);
+}
+
+export function useSceneMaterialOpacity(): number {
+    return useContext(SceneMaterialOpacityContext);
 }
 
 interface FadingSceneGroupProps {
@@ -65,7 +70,7 @@ export function FadingSceneGroup({
                 material.opacity = snapshot.opacity * layerOpacity;
             });
         });
-    });
+    }, -1);
 
     useEffect(() => {
         const materials = materialsRef.current;
@@ -82,8 +87,10 @@ export function FadingSceneGroup({
     }, []);
 
     return (
-        <SceneLayerOpacityContext.Provider value={labelOpacity}>
-            <group ref={groupRef}>{children}</group>
-        </SceneLayerOpacityContext.Provider>
+        <SceneMaterialOpacityContext.Provider value={opacity}>
+            <SceneLayerOpacityContext.Provider value={labelOpacity}>
+                <group ref={groupRef}>{children}</group>
+            </SceneLayerOpacityContext.Provider>
+        </SceneMaterialOpacityContext.Provider>
     );
 }

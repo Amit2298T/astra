@@ -13,12 +13,13 @@
     "start": "next start",
     "lint": "eslint",
     "test:solar-motion": "node --test --experimental-strip-types src/engine/astronomy/OrbitalMotion.test.mjs",
+    "test:belts": "node --test --experimental-strip-types src/engine/astronomy/BeltPopulation.test.mjs",
     "test:performance-tier": "node --test --experimental-strip-types src/engine/performance/PerformanceTier.test.mjs",
     "test:star-systems": "node --test --experimental-strip-types src/data/starSystems.test.mjs src/engine/navigation/LocalDestination.test.mjs",
     "test:guide": "node --test --experimental-strip-types src/engine/guide/GuideEngine.test.mjs",
     "test:validation": "node --test --experimental-strip-types src/data/validation.test.mjs",
     "test:stellar-neighborhood": "npm run test:star-systems",
-    "test": "npm run test:performance-tier && npm run test:star-systems && npm run test:solar-motion && npm run test:guide && npm run test:validation"
+    "test": "npm run test:performance-tier && npm run test:star-systems && npm run test:solar-motion && npm run test:belts && npm run test:guide && npm run test:validation"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",
